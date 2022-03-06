@@ -1,0 +1,40 @@
+[submodule "vendor/stb"]
+	path = vendor/stb
+	url = https://github.com/nothings/stb.git
+[submodule "vendor/glfw"]
+	path = vendor/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "vendor/assimp"]
+	path = vendor/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "vendor/glm"]
+	path = vendor/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "vendor/termcolor"]
+	path = vendor/termcolor
+	url = https://github.com/ikalnytskyi/termcolor.git
+[submodule "vendor/EntityComponentSystem"]
+	path = vendor/EntityComponentSystem
+	url = https://github.com/lcomstive/EntityComponentSystem.git
+[submodule "Project/Dependencies/glm"]
+	path = Project/Dependencies/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "Project/Dependencies/stb"]
+	path = Project/Dependencies/stb
+	url = https://github.com/nothings/stb.git
+[submodule "Project/Dependencies/imgui"]
+	path = Project/Dependencies/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
+[submodule "Project/Dependencies/glfw"]
+	path = Project/Dependencies/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "Project/Dependencies/assimp"]
+	path = Project/Dependencies/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "Project/Dependencies/termcolor"]
+	path = Project/Dependencies/termcolor
+	url = https://github.com/ikalnytskyi/termcolor.git
