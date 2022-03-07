@@ -20,13 +20,14 @@ namespace Engine::Graphics
 		RenderPipelinePass& GetPipelinePass();
 	};
 
-	enum class Tonemapper { None = 0, Aces, Reinhard, Exposure };
+	enum class Tonemapper { None = 0, Aces, Reinhard };
 
 	class TonemappingPass : public FullscreenEffectPass
 	{
 	public:
 		TonemappingPass();
 
+		float Gamma = 2.2f;
 		float Exposure = 1.0f;
 		Tonemapper Tonemapper = Tonemapper::None;
 

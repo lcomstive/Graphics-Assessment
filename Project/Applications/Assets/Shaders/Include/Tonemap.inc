@@ -1,8 +1,8 @@
 uniform float gamma = 2.2;
 uniform float exposure = 1.0;
 
+vec3 Expose(vec3 input) { return vec3(1.0) - exp(-input * exposure); }
 vec3 ReinhardTonemap(vec3 input) { return input / (input + vec3(1.0)); }
-vec3 ExposureTonemap(vec3 input) { return vec3(1.0) - exp(-input * exposure); }
 
 vec3 GammaCorrect(vec3 input) { return pow(input, vec3(1.0 / gamma)); }
 

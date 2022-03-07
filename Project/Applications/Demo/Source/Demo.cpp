@@ -78,6 +78,11 @@ const string ExternalServicePath = "Services/Test Service.dll";
 const string ExternalServicePath = "Services/Test Service.so";
 #endif
 
+#define TEST_EXTERNAL 1
+#if !TEST_EXTERNAL
+GameObject* TestGO = nullptr;
+#endif
+
 void SetMaterialTextures(Model::MeshData& meshData)
 {
 	for(Material& mat : meshData.Materials)
@@ -117,13 +122,22 @@ void Demo::OnStart()
 
 	// Tonemapping
 	PP_Tonemapping = new TonemappingPass();
-	// Renderer::GetPipeline()->AddPass(PP_Tonemapping->GetPipelinePass());
+	Renderer::GetPipeline()->AddPass(PP_Tonemapping->GetPipelinePass());
 
 	// Create scene
 	ResetScene();
 
 	// Load external service
-	Application::GetService<ExternalServices>()->Add(appDir + ExternalServicePath);
+#if TEST_EXTERNAL
+	// Application::GetService<ExternalServices>()->Add(appDir + ExternalServicePath);
+#else
+	TestGO = new GameObject(Application::GetService<SceneService>()->CurrentScene(), "Test GO");
+
+	Material mat;
+	mat.Albedo = { 1, 0, 1, 0.25f };
+	TestGO->GetTransform()->Scale = vec3(5.0f);
+	TestGO->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), mat } };
+#endif
 }
 
 void Demo::OnShutdown()
@@ -184,14 +198,14 @@ void Demo::ResetScene()
 
 	Material lightMaterial;
 
-	const int LightCount = 4;
+	const int LightCount = 20;
 	for (int i = 0; i < LightCount; i++)
 	{
 		lightMaterial.Albedo =
 		{
-			Random(0.5f, 1.0f),
-			Random(0.5f, 1.0f),
-			Random(0.5f, 1.0f),
+			Random(0.5f, 2.0f),
+			Random(0.5f, 2.0f),
+			Random(0.5f, 2.0f),
 			1.0
 		};
 		LightData data;
@@ -203,7 +217,7 @@ void Demo::ResetScene()
 		data.Component->Colour = lightMaterial.Albedo;
 		data.Transform = light->GetTransform();
 		data.Transform->Position.y = Random(-10.0f, 10.0f);
-		data.Component->Radius = 20.0f;
+		data.Component->Radius = 50.0f;
 		data.Speed = Random(2.5f, 10.0f);
 		data.Distance = Random(5.0f, 15.0f);
 		data.SwapDirection = Random(0, 100) > 50;
@@ -240,10 +254,8 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_F11))
 		Application::ToggleFullscreen();
 	
-	/*
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Application::Exit();
-	*/
 
 	if (Input::IsKeyPressed(GLFW_KEY_SPACE))
 		scene->GetPhysics().TogglePause();
@@ -261,6 +273,10 @@ void Demo::OnUpdate(float deltaTime)
 		data.Transform->Position.x = cos(radians(time)) * data.Distance;
 		data.Transform->Position.z = sin(radians(time)) * data.Distance;
 	}
+
+#if !TEST_EXTERNAL
+	TestGO->GetTransform()->Position.y = cos(Renderer::GetTime()) * 2.5f;
+#endif
 }
 
 void Demo::OnDraw()
@@ -284,6 +300,8 @@ void Demo::OnDraw()
 	const ImVec4 ColourGood = { 1, 1, 1, 1 };
 	const ImVec4 ColourBad = { 1, 0, 0, 1 };
 
+	auto& transforms = scene->Root().GetComponentsInChildren<Transform>();
+
 	static bool debugWindowOpen = true;
 	PhysicsSystem& physicsSystem = scene->GetPhysics();
 	if (ImGui::Begin("Debugging", &debugWindowOpen))
@@ -294,6 +312,7 @@ void Demo::OnDraw()
 
 		ImGui::Text("FPS: %f\n", Renderer::GetFPS());
 		ImGui::Text("Total Objects: %i", (int)CreatedObjects.size());
+		ImGui::Text("Transforms: %i", (int)transforms.size());
 		ImGui::TextColored(
 			(frameTime < (1000.0f / 30.0f)) ? ColourGood : ColourBad,
 			"Render  Frame Time: %.1fms",
@@ -307,14 +326,16 @@ void Demo::OnDraw()
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
 		ImGui::Text("Samples: %d", Renderer::GetSamples());
 
-		static string TonemapperNames[] = {"None", "Aces", "Reinhard", "Exposure"};
+		static string TonemapperNames[] = {"None", "Aces", "Reinhard" };
 		if (ImGui::BeginCombo("Tonemapper", TonemapperNames[(int)PP_Tonemapping->Tonemapper].c_str()))
 		{
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < 3; i++)
 				if (ImGui::Selectable(TonemapperNames[i].c_str(), (int)PP_Tonemapping->Tonemapper == i))
 					PP_Tonemapping->Tonemapper = (Tonemapper)i;
 			ImGui::EndCombo();
 		}
+		ImGui::DragFloat("Gamma", &PP_Tonemapping->Gamma, 0.05f, 1.0f, 3.0f);
+		ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
 
 		if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
 			ImGui::Text("PHYSICS PAUSED");
@@ -324,6 +345,14 @@ void Demo::OnDraw()
 
 		ImGui::End();
 	}
+
+#if !TEST_EXTERNAL
+	if (ImGui::Begin("Test Service Window"))
+	{
+		ImGui::Text("TESTING");
+		ImGui::End();
+	}
+#endif
 }
 
 void Demo::OnDrawGizmos()
@@ -336,4 +365,15 @@ void Demo::OnDrawGizmos()
 	Gizmos::SetColour(1, 1, 1, 0.2f);
 	Gizmos::Draw(GridMeshID, vec3(-GridSize, 0.0f, -GridSize), vec3(GridSize * 2.0f));
 #endif
+
+#if !TEST_EXTERNAL
+	Gizmos::SetColour(1, 0, 1, 1);
+	Gizmos::DrawWireSphere(vec3(0), 5.0f);
+#endif
+
+	for (auto& Light : Lights)
+	{
+		Gizmos::SetColour(Light.Component->Colour);
+		// Gizmos::DrawWireSphere(Light.Transform->Position, Light.Component->Radius);
+	}
 }

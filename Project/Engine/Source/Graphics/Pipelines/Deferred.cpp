@@ -23,8 +23,8 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	// Mesh Pass //
 	framebufferSpecs.Attachments =
 	{
-		TextureFormat::RGBA16F,	// Position + Roughness
-		TextureFormat::RGBA16F,	// Normal + Metalness
+		{ TextureFormat::RGBA16F, TexturePixelType::Float },	// Position + Roughness
+		{ TextureFormat::RGBA16F, TexturePixelType::Float },	// Normal + Metalness
 		TextureFormat::RGB8,	// Albedo
 		TextureFormat::Depth
 	};
@@ -45,7 +45,7 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	// Lighting Pass //
 	framebufferSpecs.Attachments =
 	{
-		TextureFormat::RGBA8,
+		{ TextureFormat::RGBA16F, TexturePixelType::Float },
 		TextureFormat::Depth
 	};
 	m_LightingPass = new Framebuffer(framebufferSpecs);
@@ -64,10 +64,9 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	// Forward/Transparent Pass //
 	framebufferSpecs.Attachments =
 	{
-		TextureFormat::RGBA8,
+		{ TextureFormat::RGBA16F, TexturePixelType::Float },
 		TextureFormat::Depth
 	};
-	framebufferSpecs.SwapchainTarget = true;
 	m_ForwardPass = new Framebuffer(framebufferSpecs);
 	pass.Pass = m_ForwardPass;
 
@@ -149,7 +148,6 @@ void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 
 	// DRAW FULLSCREEN QUAD //
 	ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
-
 }
 
 void DeferredRenderPipeline::ForwardPass(Framebuffer* previous)

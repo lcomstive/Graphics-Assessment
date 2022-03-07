@@ -27,13 +27,16 @@ void TestService::OnStart()
 	go = new GameObject(scene, "Test GO");
 
 	Material mat;
-	mat.Albedo = { 1, 0, 1, 1 };
+	mat.Albedo = { 1, 0, 1, 0.25f };
 	go->GetTransform()->Scale = vec3(5.0f);
 	go->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), mat } };
 }
 
 void TestService::OnShutdown()
 {
+	go->GetTransform()->SetParent(nullptr);
+	delete go;
+
 	Log::Info("Test service shutting down...");
 }
 
@@ -54,8 +57,5 @@ void TestService::OnDrawGizmos()
 
 void TestService::OnUpdate(float dt)
 {
-	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
-		Application::Exit();
-
-	go->GetTransform()->Position.y = cos(Renderer::GetTime());
+	go->GetTransform()->Position.y = cos(Renderer::GetTime()) * 2.5f;
 }

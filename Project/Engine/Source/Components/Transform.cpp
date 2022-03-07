@@ -78,7 +78,12 @@ void Transform::SetParent(Transform* parent)
 	{
 		// Remove from previous parent
 		for (uint32_t i = 0; i < (uint32_t)m_Parent->m_Children.size(); i++)
+		{
+			if (m_Parent->m_Children[i] != this)
+				continue;
 			m_Parent->m_Children.erase(m_Parent->m_Children.begin() + i);
+			break;
+		}
 	}
 
 	m_Parent = parent;

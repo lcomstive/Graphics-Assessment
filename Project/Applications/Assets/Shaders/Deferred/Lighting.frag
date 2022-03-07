@@ -6,7 +6,7 @@
 
 out vec4 fragColour;
 
-in vec2 passTexCoords;
+in vec2 TexCoords;
 
 uniform sampler2D inputPositionRoughness;
 uniform sampler2D inputNormalMetalness;
@@ -15,12 +15,12 @@ uniform sampler2D inputDepth;
 
 void main()
 {
-	vec4 positionRoughness = texture(inputPositionRoughness, passTexCoords);
-	vec4 normalMetalness = texture(inputNormalMetalness, passTexCoords);
+	vec4 positionRoughness = texture(inputPositionRoughness, TexCoords);
+	vec4 normalMetalness = texture(inputNormalMetalness, TexCoords);
 
 	PBRInput input;
 
-	input.Albedo = texture(inputAlbedo, passTexCoords).rgb;
+	input.Albedo = texture(inputAlbedo, TexCoords).rgb;
 	input.Normals = normalMetalness.rgb;
 	input.Metalness = normalMetalness.a;
 	input.WorldPos = positionRoughness.rgb;

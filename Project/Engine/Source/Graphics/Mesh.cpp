@@ -143,7 +143,14 @@ ResourceID& Mesh::Quad()
 		1, 2, 3  // Triangle 2
 	};
 
-	quadMeshID = ResourceManager::Load<Mesh>(vertices, indices);
+	const string PrimitiveQuadName = "PrimitiveQuadName";
+	if (ResourceManager::IsValid(PrimitiveQuadName))
+		quadMeshID = *ResourceManager::Get<ResourceID>(PrimitiveQuadName);
+	else
+	{
+		quadMeshID = ResourceManager::Load<Mesh>(vertices, indices);
+		ResourceManager::LoadNamed<ResourceID>(PrimitiveQuadName, quadMeshID);
+	}
 	return quadMeshID;
 }
 
@@ -168,7 +175,14 @@ ResourceID& Mesh::Line()
 	};
 	vector<unsigned int> indices = { 0, 1 };
 
-	lineMeshID = ResourceManager::Load<Mesh>(vertices, indices, DrawMode::Lines);
+	const string PrimitiveLineName = "PrimitiveLineID";
+	if (ResourceManager::IsValid(PrimitiveLineName))
+		lineMeshID = *ResourceManager::Get<ResourceID>(PrimitiveLineName);
+	else
+	{
+		lineMeshID = ResourceManager::Load<Mesh>(vertices, indices, DrawMode::Lines);
+		ResourceManager::LoadNamed<ResourceID>(PrimitiveLineName, lineMeshID);
+	}
 	return lineMeshID;
 }
 
@@ -223,7 +237,7 @@ ResourceID& Mesh::Cube()
 	if (cubeMeshID != InvalidResourceID)
 		return cubeMeshID;
 
-	Model* model = new Model(Application::AssetDir + "Models/Primitives/Cube.fbx");
+	Model* model = ResourceManager::LoadNamed<Model>("PrimitiveCube", Application::AssetDir + "Models/Primitives/Cube.fbx");
 	return (cubeMeshID = model->GetMeshes()[0]);
 }
 
@@ -233,6 +247,6 @@ ResourceID& Mesh::Sphere()
 	if (sphereMeshID != InvalidResourceID)
 		return sphereMeshID;
 
-	Model* model = new Model(Application::AssetDir + "Models/Primitives/Sphere.fbx");
+	Model* model = ResourceManager::LoadNamed<Model>("PrimitiveSphere", Application::AssetDir + "Models/Primitives/Sphere.fbx");
 	return (sphereMeshID = model->GetMeshes()[0]);
 }

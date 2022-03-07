@@ -6,6 +6,15 @@
 
 namespace Engine::Graphics
 {
+	struct FramebufferAttachment
+	{
+		TextureFormat Format = TextureFormat::RGBA8;
+		TexturePixelType PixelType = TexturePixelType::UnsignedByte;
+
+		FramebufferAttachment() {}
+		FramebufferAttachment(TextureFormat format, TexturePixelType pixelType = TexturePixelType::UnsignedByte) : Format(format), PixelType(pixelType) { }
+	};
+
 	struct FramebufferSpec
 	{
 		glm::ivec2 Resolution = { 0, 0 };
@@ -20,7 +29,7 @@ namespace Engine::Graphics
 		/// </summary>
 		unsigned int Samples = 1;
 		
-		std::vector<TextureFormat> Attachments;
+		std::vector<FramebufferAttachment> Attachments;
 	};
 
 	class Framebuffer

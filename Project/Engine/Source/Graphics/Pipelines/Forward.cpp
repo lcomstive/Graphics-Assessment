@@ -16,7 +16,7 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 	FramebufferSpec framebufferSpecs = { Renderer::GetResolution() };
 	framebufferSpecs.Attachments =
 	{
-		TextureFormat::RGBA8,
+		{ TextureFormat::RGBA16F, TexturePixelType::Float },
 		TextureFormat::Depth
 	};
 	

@@ -10,12 +10,11 @@ uniform sampler2D inputTexture;
 // 0 = None
 // 1 = Aces
 // 2 = Reinhard
-// 3 = Exposure
 uniform int tonemapper = 1;
 
 void main()
 {
-	vec3 colour = texture(inputTexture, TexCoords).rgb;
+	vec3 colour = texture(inputTexture, TexCoords).rgb;	
 	switch(tonemapper)
 	{
 		default:
@@ -28,9 +27,13 @@ void main()
 		case 2:
 			colour = ReinhardTonemap(colour);
 			break;
-		case 3:
-			colour = ExposureTonemap(colour);
-			break;
 	}
+	
+	// Expose
+	colour = Expose(colour);
+
+	// Gamma Correct
+	colour = GammaCorrect(colour);
+
 	FragColour = vec4(colour, 1.0);
 }

@@ -25,6 +25,8 @@ GameObject::GameObject(GameObject* parent, string name) : m_Name(name), m_Compon
 
 GameObject::~GameObject()
 {	
+	m_Transform->SetParent(nullptr);
+
 	for (auto& pair : m_Components)
 	{
 		pair.second->Removed();

@@ -43,7 +43,7 @@ project "Test Service"
 		-- Copy output file to Assets directory
 		postbuildcommands
 		{
-			"{MKDIR} \"%{wks.location}../Applications/Assets/Services/\"",
+			-- "{MKDIR} \"%{wks.location}../Applications/Assets/Services/\"",
 			"{COPYFILE} \"%{OutputDir}%{prj.name}/%{prj.name}" .. fileExt .. "\" \"%{wks.location}../Applications/Assets/Services/%{prj.name}" .. fileExt .. "\""
 		}
 

@@ -39,7 +39,7 @@ void RenderPipeline::Draw(Camera& camera)
 			camera.FillShader(m_CurrentShader);
 
 			auto lights = scene->Root().GetComponentsInChildren<Light>();
-			int lightCount = std::min((int32_t)lights.size(), 64);
+			int lightCount = std::min((int32_t)lights.size(), MAX_LIGHTS);
 			m_CurrentShader->Set("lightCount", lightCount);
 			for(int i = 0; i < lightCount; i++)
 			{

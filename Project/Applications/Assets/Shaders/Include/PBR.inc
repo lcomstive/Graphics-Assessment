@@ -58,12 +58,20 @@ vec3 PBRLighting(PBRInput input)
 	vec3 Lo = vec3(0.0);
 	for(int i = 0; i < lightCount; i++)
 	{
+		float dist = length(lights[i].Position - input.WorldPos);
+		if(dist > lights[i].Radius)
+			continue;
+		
 		vec3 L = normalize(lights[i].Position - input.WorldPos);
 		vec3 H = normalize(viewDir + L);
 
-		float dist = length(lights[i].Position - input.WorldPos);
-		float attenuation = 1.0 / (dist * dist);
-		vec3 radiance = lights[i].Colour * attenuation * lights[i].Radius;
+		const float Linear = 0.7;
+		const float Quadratic = 1.8;
+
+		float attenuation = 1.0 / (1.0 + Linear * dist + Quadratic * dist * dist);
+		// float attenuation = 1.0 / (dist * dist);
+
+		vec3 radiance = lights[i].Colour * attenuation;
 
 		float NDF = DistributionGGX(input.Normals, H, input.Roughness);
 		vec3 F = FresnelSchlick(max(dot(H, viewDir), 0.0), F0);
@@ -81,7 +89,7 @@ vec3 PBRLighting(PBRInput input)
 		Lo += (kD * input.Albedo / PBR_PI + specular) * radiance * NdotL;
 	}
 	
-	vec3 ambient = vec3(0.03) * input.Albedo;
+	vec3 ambient = vec3(0.003) * input.Albedo;
 	vec3 colour = ambient + Lo;
 	return colour;  
 }

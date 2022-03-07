@@ -3,6 +3,8 @@
 #include <functional>
 #include <Engine/Components/Camera.hpp>
 
+#define MAX_LIGHTS 100
+
 namespace Engine::Graphics
 {
 	class Shader; // Forward declaration

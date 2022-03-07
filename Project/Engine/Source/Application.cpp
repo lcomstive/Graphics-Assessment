@@ -76,8 +76,8 @@ void Application::Run()
 	CreateAppWindow();
 
 	// Setup Render Pipeline
-	Renderer::SetPipeline<Pipelines::ForwardRenderPipeline>();
-	// Renderer::SetPipeline<Pipelines::DeferredRenderPipeline>();
+	// Renderer::SetPipeline<Pipelines::ForwardRenderPipeline>();
+	Renderer::SetPipeline<Pipelines::DeferredRenderPipeline>();
 	
 	Renderer::SetVSync(m_Args.VSync);
 	Renderer::Resized(m_Args.Resolution);
@@ -314,6 +314,7 @@ void Application::SetupGizmos()
 			pair.second->OnDrawGizmos();
 
 		Renderer::Draw();
+		Renderer::SetWireframe(false);
 	};
 	Renderer::GetPipeline()->AddPass(pass);
 }

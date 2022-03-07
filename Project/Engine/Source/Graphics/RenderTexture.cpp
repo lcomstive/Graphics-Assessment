@@ -64,10 +64,11 @@ bool Engine::Graphics::IsDepthFormat(TextureFormat format)
 	}
 }
 
-RenderTexture::RenderTexture(ivec2 resolution, TextureFormat format, unsigned int samples) : m_ID(GL_INVALID_VALUE)
+RenderTexture::RenderTexture(ivec2 resolution, TextureFormat format, unsigned int samples, TexturePixelType pixelType) : m_ID(GL_INVALID_VALUE)
 {
 	m_Format = format;
 	m_Samples = samples;
+	m_PixelType = pixelType;
 	m_Resolution = resolution;
 
 	Recreate();
@@ -198,7 +199,7 @@ void RenderTexture::CreateColourTexture()
 				m_Resolution.y,
 				0,					// Border
 				GLFormat,			// Format
-				GL_UNSIGNED_BYTE,	// Type
+				(GLenum)m_PixelType,// Type
 				nullptr				// Data/Pixels
 			);
 

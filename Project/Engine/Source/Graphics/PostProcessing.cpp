@@ -16,7 +16,7 @@ FullscreenEffectPass::FullscreenEffectPass(std::string fragmentShaderPath)
 {
 	FramebufferSpec specs;
 	specs.Resolution = Renderer::GetResolution();
-	specs.Attachments = { TextureFormat::RGBA8 };
+	specs.Attachments = { { TextureFormat::RGBA16F, TexturePixelType::Float } };
 	m_Pass.Pass = new Framebuffer(specs);
 
 	m_Pass.Shader = new Shader({
@@ -29,6 +29,7 @@ FullscreenEffectPass::FullscreenEffectPass(std::string fragmentShaderPath)
 		m_Pass.Shader->Set("inputTexture", 0);
 		OnDraw(m_Pass.Shader);
 
+		// DRAW FULLSCREEN QUAD //
 		ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
 	};
 }
@@ -48,6 +49,7 @@ TonemappingPass::TonemappingPass() : FullscreenEffectPass(TonemappingShader) { }
 
 void TonemappingPass::OnDraw(Shader* shader)
 {
+	shader->Set("gamma", Gamma);
 	shader->Set("exposure", Exposure);
 	shader->Set("tonemapper", (int)Tonemapper);
 }

@@ -46,12 +46,13 @@ void Framebuffer::Create()
 
 	for (unsigned int i = 0; i < m_Specs.Attachments.size(); i++)
 	{
-		if (IsDepthFormat(m_Specs.Attachments[i]))
+		if (IsDepthFormat(m_Specs.Attachments[i].Format))
 		{
 			RenderTexture* texture = new RenderTexture(
 				m_Specs.Resolution,
-				m_Specs.Attachments[i],
-				m_Specs.Samples
+				m_Specs.Attachments[i].Format,
+				m_Specs.Samples,
+				m_Specs.Attachments[i].PixelType
 			);
 			m_DepthAttachment = texture;
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, texture->GetID());
@@ -60,16 +61,17 @@ void Framebuffer::Create()
 		{
 			RenderTexture* texture = new RenderTexture(
 				m_Specs.Resolution,
-				m_Specs.Attachments[i],
-				m_Specs.Samples
+				m_Specs.Attachments[i].Format,
+				m_Specs.Samples,
+				m_Specs.Attachments[i].PixelType
 			);
 			m_ColourAttachments.emplace_back(texture);
 
-			if (m_Specs.Attachments[i] != TextureFormat::Cubemap)
+			if (m_Specs.Attachments[i].Format != TextureFormat::Cubemap)
 				glFramebufferTexture2D(
 					GL_FRAMEBUFFER,
 					(GLenum)(GL_COLOR_ATTACHMENT0 + (m_ColourAttachments.size() - 1)),
-					GetTextureTarget(m_Specs.Attachments[i], m_Specs.Samples > 1),
+					GetTextureTarget(m_Specs.Attachments[i].Format, m_Specs.Samples > 1),
 					texture->GetID(),
 					0 // Mipmap Level
 				);

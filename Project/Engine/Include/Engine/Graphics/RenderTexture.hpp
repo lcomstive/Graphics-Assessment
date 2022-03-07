@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 
 namespace Engine::Graphics
 {
@@ -23,6 +24,17 @@ namespace Engine::Graphics
 		Depth = Depth24Stencil8
 	};
 
+	enum class TexturePixelType
+	{
+		Byte			= GL_BYTE,
+		Short			= GL_SHORT,
+		UnsignedShort	= GL_UNSIGNED_SHORT,
+		UnsignedByte	= GL_UNSIGNED_BYTE,
+		Float			= GL_FLOAT,
+		Int				= GL_INT,
+		UnsignedInt		= GL_UNSIGNED_INT
+	};
+
 	bool IsDepthFormat(TextureFormat format);
 	unsigned int GetTextureTarget(TextureFormat format, bool multisampled = false);
 	unsigned int TextureFormatToGLFormat(TextureFormat format);
@@ -31,6 +43,7 @@ namespace Engine::Graphics
 	class RenderTexture
 	{
 		glm::ivec2 m_Resolution;
+		TexturePixelType m_PixelType;
 		unsigned int m_ID, m_Samples = 1;
 		TextureFormat m_Format = TextureFormat::RGBA8;
 
@@ -43,7 +56,9 @@ namespace Engine::Graphics
 		RenderTexture(
 			glm::ivec2 resolution,
 			TextureFormat format = TextureFormat::RGBA8,
-			unsigned int samples = 1);
+			unsigned int samples = 1,
+			TexturePixelType pixelType = TexturePixelType::UnsignedByte
+			);
 		~RenderTexture();
 
 		unsigned int GetID();
