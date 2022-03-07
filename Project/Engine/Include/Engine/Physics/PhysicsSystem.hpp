@@ -52,8 +52,6 @@ namespace Engine::Physics
 		/// </summary>
 		float m_PenetrationSlack = 0.02f;
 
-		Engine::Application* m_App;
-
 		void PhysicsLoop();
 
 		void AddCollider(Components::Collider* collider);
@@ -83,7 +81,7 @@ namespace Engine::Physics
 		int m_Substeps;
 
 	public:
-		PhysicsSystem(Engine::Application* app, std::chrono::milliseconds fixedTimestep = 50ms);
+		PhysicsSystem(std::chrono::milliseconds fixedTimestep = 50ms);
 		~PhysicsSystem();
 
 		void Start();

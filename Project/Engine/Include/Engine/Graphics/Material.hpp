@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <Engine/DataStream.hpp>
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/Shader.hpp>
 #include <Engine/Graphics/Texture.hpp>
@@ -88,6 +89,10 @@ namespace Engine::Graphics
 
 		bool Wireframe = false;
 
+		void Serialize(DataStream& stream);
 		void FillShader(Shader* shader) const;
+
+	private:
+		void SerializeTexture(DataStream& stream, Texture*& texture);
 	};
 }

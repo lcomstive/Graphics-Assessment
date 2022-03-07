@@ -7,11 +7,23 @@
 #include <Engine/Log.hpp>	// Console logging
 #include <Engine/Input.hpp> // Handles keyboard & mouse input
 #include <Engine/Scene.hpp> // Holds game objects & state
+#include <imgui.h>			// Immediate Mode UI Library
+
+#include <Engine/Services/Service.hpp>
 
 using namespace std::chrono_literals; // seconds in literal
 
+namespace Engine::Graphics
+{
+	class Mesh;
+	class Gizmos;
+	class Renderer;
+}
+
 namespace Engine
 {
+	class ResourceManager; // Forward declaration
+
 	struct ApplicationArgs
 	{
 		/// <summary>
@@ -46,45 +58,17 @@ namespace Engine
 		bool Fullscreen = false;
 	};
 
+	enum class ApplicationState { Starting, Running, Stopping };
 	class Application
 	{
-		Scene m_Scene;
+		Input* m_Input;
+		ApplicationState m_State;
+		Graphics::Gizmos* m_Gizmos;
+		Graphics::Renderer* m_Renderer;
+		ImGuiContext* m_ImGuiContext = nullptr;
+		ResourceManager* m_ResourceManager = nullptr;
 
-		friend class Engine::Physics::PhysicsSystem;
-
-	protected:
-		/// <summary>
-		/// When a frame is ready to be drawn
-		/// </summary>
-		virtual void OnDraw() { }
-
-		/// <summary>
-		/// When gizmos are ready to be drawn
-		/// </summary>
-		virtual void OnDrawGizmos() { }
-
-		/// <summary>
-		/// Called once before each draw call
-		/// </summary>
-		/// <param name="deltaTime">Time, in milliseconds, since last frame</param>
-		virtual void OnUpdate() { }
-
-		/// <summary>
-		/// When the class has been initialised.
-		/// Typical usage is pre-loading assets.
-		/// </summary>
-		virtual void OnStart() { }
-
-		/// <summary>
-		/// Application is being closed
-		/// </summary>
-		virtual void OnShutdown() { }
-
-		/// <summary>
-		/// Called when the window has been resized
-		/// </summary>
-		/// <param name="resolution">New width & height in pixels</param>
-		virtual void OnResized(glm::ivec2 resolution) { }
+		std::unordered_map<std::type_index, Services::Service*> m_Services = {};
 
 	public:
 		/// <summary>
@@ -101,32 +85,48 @@ namespace Engine
 		void Run();
 
 		/// <summary>
-		/// Informs the application to close and release resources
+		/// Call from separate threads/DLLs to update global values
 		/// </summary>
-		void Exit();
+		void UpdateGlobals();
 
 		/// <summary>
-		/// The active scene
+		/// Informs the application to close and release resources
 		/// </summary>
-		Scene* CurrentScene();
+		static void Exit();
 
 		/// <summary>
 		/// Renames the application window title
 		/// </summary>
-		void SetTitle(std::string title);
+		static void SetTitle(std::string title);
 
 		/// <returns>True if currently fullscreen mode</returns>
-		bool GetFullscreen();
+		static bool GetFullscreen();
 
 		/// <summary>
 		/// If fullscreen, make not fullscreen... and vice versa
 		/// </summary>
-		void ToggleFullscreen();
+		static void ToggleFullscreen();
 
 		/// <summary>
 		/// Sets the application window fullscreen or windowed
 		/// </summary>
-		void SetFullscreen(bool fullscreen);
+		static void SetFullscreen(bool fullscreen) { s_Instance->_SetFullscreen(fullscreen); }
+
+		static void ShowMouse(bool show);
+
+		static ApplicationState GetState();
+
+		template<typename T>
+		static T* AddService() { return s_Instance->_AddService<T>(); }
+
+		template<typename T>
+		static T* GetService() { return s_Instance->_GetService<T>(); }
+
+		template<typename T>
+		static void RemoveService() { return s_Instance->_RemoveService<T>(); }
+
+		static Application* Get() { return s_Instance; }
+
 	private:
 		GLFWwindow* m_Window;
 		ApplicationArgs m_Args;
@@ -138,6 +138,45 @@ namespace Engine
 
 		void SetupGizmos();
 		void CreateAppWindow();
+
+		// Functions starting with _ are to be declared statically and accessed through s_Instance
+
+		template<typename T>
+		T* _GetService()
+		{
+			const auto& it = m_Services.find(typeid(T));
+			return (T*)(it == m_Services.end() ? nullptr : it->second);
+		}
+
+		template<typename T>
+		void _RemoveService()
+		{
+			const auto& it = m_Services.find(typeid(T));
+			if (it == m_Services.end())
+				return;
+
+			it->second->OnShutdown();
+			delete it->second;
+			m_Services.erase(it);
+		}
+
+		template<typename T>
+		T* _AddService()
+		{
+			Log::Assert(std::is_base_of<Services::Service, T>(), "Added services need to derive from Engine::Service");
+
+			const std::type_index& type = typeid(T);
+			if (m_Services.find(type) != m_Services.end())
+				return (T*)m_Services[type];
+
+			T* service = new T();
+			m_Services.emplace(type, (Services::Service*)service);
+			if (m_State == ApplicationState::Running)
+				((Services::Service*)service)->OnStart();
+			return service;
+		}
+
+		void _SetFullscreen(bool fullscreen);
 
 #pragma region GLFW Callbacks
 		static void GLFW_WindowCloseCallback(GLFWwindow* window);
@@ -151,9 +190,3 @@ namespace Engine
 #pragma endregion
 	};
 }
-
-#define APPLICATION_MAIN(type)	\
-	int main() {				\
-		type().Run();			\
-		return 0;				\
-	}

@@ -1,18 +1,15 @@
 #pragma once
-#include <Engine/Application.hpp>
-#include <Engine/Physics/Shapes.hpp>
+#include <Engine/Services/Service.hpp>
 
-class Demo : public Engine::Application
+class Demo : public Engine::Services::Service
 {
+protected:
 	void OnStart() override;
 	void OnShutdown() override;
 
 	void OnDraw() override;
-	void OnUpdate() override;
 	void OnDrawGizmos() override;
+	void OnUpdate(float deltaTime) override;
 
 	void ResetScene();
-
-public:
-	Demo(Engine::ApplicationArgs args);
 };

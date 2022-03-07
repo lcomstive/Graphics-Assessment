@@ -55,7 +55,7 @@ void Spring::ApplyForces(float timestep)
 void Spring::DrawGizmos()
 {
 #ifndef NDEBUG
-	Gizmos::Colour = { 0, 1, 0, 1 };
+	Gizmos::SetColour(0, 1, 0, 1);
 	Gizmos::DrawLine(m_Point1->GetTransform()->GetGlobalPosition(), m_Point2->GetTransform()->GetGlobalPosition());
 #endif
 }

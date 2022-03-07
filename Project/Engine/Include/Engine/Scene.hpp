@@ -13,10 +13,8 @@ namespace Engine
 		GameObject m_Root;
 		Physics::PhysicsSystem m_Physics;
 
-		static Scene* s_Active;
-
 	public:
-		Scene(Application* app, std::string name = "Scene");
+		Scene(std::string name = "Scene");
 
 		GameObject& Root();
 		Physics::PhysicsSystem& GetPhysics();
@@ -25,8 +23,5 @@ namespace Engine
 		void Clear();
 		void DrawGizmos();
 		void Update(float deltaTime);
-
-		void SetActive();
-		static Scene* GetActive();
 	};
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 namespace Engine
@@ -30,16 +31,22 @@ namespace Engine
 			Released
 		};
 
-		static float s_ScrollDelta;
-		static glm::vec2 s_MousePos, s_LastMousePos;
-		static GLFWwindow* s_MainWindow;
-		static std::map<int, KeyState> s_KeyStates;
-		static std::map<int, KeyState> s_MouseStates;
+		float m_ScrollDelta = 0;
+		glm::vec2 m_MousePos = glm::vec2(0), m_LastMousePos = glm::vec2(0);
+		std::map<int, KeyState> m_KeyStates;
+		std::map<int, KeyState> m_MouseStates;
 
-		static void Update();
+		static Input* s_Instance;
+
+		void Update();
+
+		Input();
+		~Input();
 
 		friend class Application;
+
 	public:
+
 #pragma region Keys
 		/// <returns>True if the key is not pressed down</returns>
 		static bool IsKeyUp(int key);

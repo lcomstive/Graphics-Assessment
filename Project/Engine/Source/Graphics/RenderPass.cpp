@@ -1,3 +1,4 @@
+/*
 #include <glad/glad.h>
 #include <Engine/Graphics/RenderPass.hpp>
 
@@ -22,3 +23,4 @@ void RenderPass::End() { m_Framebuffer->Unbind(); }
 unsigned int RenderPass::GetColourAttachmentCount() { return m_Framebuffer ? m_Framebuffer->ColourAttachmentCount() : 0; }
 RenderTexture* RenderPass::GetDepthAttachment() { return m_Framebuffer ? m_Framebuffer->GetDepthAttachment() : nullptr; }
 RenderTexture* RenderPass::GetColourAttachment(unsigned int index) { return m_Framebuffer ? m_Framebuffer->GetColourAttachment(index) : nullptr; }
+*/

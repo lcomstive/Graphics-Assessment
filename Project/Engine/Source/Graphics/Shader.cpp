@@ -258,7 +258,7 @@ void Shader::CacheUniformLocations()
 	int uniformCount = 0;
 	glGetProgramiv(m_Program, GL_ACTIVE_UNIFORMS, &uniformCount);
 
-	Log::Debug("Caching " + to_string(uniformCount) + " shader uniforms");
+	// Log::Debug("Caching " + to_string(uniformCount) + " shader uniforms");
 	m_Uniforms.clear();
 	m_Uniforms.resize(uniformCount);
 
@@ -274,7 +274,7 @@ void Shader::CacheUniformLocations()
 
 		m_Uniforms[i].Location = glGetUniformLocation(m_Program, m_Uniforms[i].Name.c_str());
 
-		Log::Debug(" [" + to_string(m_Uniforms[i].Location) + "] " + m_Uniforms[i].Name);
+		// Log::Debug(" [" + to_string(m_Uniforms[i].Location) + "] " + m_Uniforms[i].Name);
 	}
 
 	// Insert invalid uniform at beginning
@@ -293,15 +293,15 @@ void Shader::Unbind()
 unsigned int Shader::GetProgram() { return m_Program; }
 unsigned int Shader::GetUniformCount() { return (unsigned int)m_Uniforms.size(); }
 
-void Shader::Set(int location, int value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
-void Shader::Set(int location, bool value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
-void Shader::Set(int location, float value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1f(m_Program, location, value); }
-void Shader::Set(int location, double value) const { Set(location, (float)value); }
-void Shader::Set(int location, vec2 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform2f(m_Program, location, value.x, value.y); }
-void Shader::Set(int location, vec3 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform3f(m_Program, location, value.x, value.y, value.z); }
-void Shader::Set(int location, vec4 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform4f(m_Program, location, value.x, value.y, value.z, value.w); }
-void Shader::Set(int location, mat3 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix3fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
-void Shader::Set(int location, mat4 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix4fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
+void Shader::Set(int& location, int value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
+void Shader::Set(int& location, bool value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
+void Shader::Set(int& location, float value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1f(m_Program, location, value); }
+void Shader::Set(int& location, double value) const { Set(location, (float)value); }
+void Shader::Set(int& location, vec2 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform2f(m_Program, location, value.x, value.y); }
+void Shader::Set(int& location, vec3 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform3f(m_Program, location, value.x, value.y, value.z); }
+void Shader::Set(int& location, vec4 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform4f(m_Program, location, value.x, value.y, value.z, value.w); }
+void Shader::Set(int& location, mat3 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix3fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
+void Shader::Set(int& location, mat4 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix4fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
 
 void Shader::Set(string locationName, int value) { Set(GetUniformInfo(locationName).Location, value); }
 void Shader::Set(string locationName, bool value) { Set(GetUniformInfo(locationName).Location, value); }
@@ -319,7 +319,7 @@ ShaderUniform& Shader::GetUniformInfo(int location)
 	return (location >= 0 && location < m_Uniforms.size() ? m_Uniforms[location] : m_Uniforms[0]);
 }
 
-ShaderUniform& Shader::GetUniformInfo(std::string locationName)
+ShaderUniform& Shader::GetUniformInfo(std::string& locationName)
 {
 	for (auto& uniform : m_Uniforms)
 		if (locationName.compare(uniform.Name) == 0)

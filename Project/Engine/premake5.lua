@@ -44,3 +44,6 @@ project "Engine"
 	filter "configurations:Release"
 		runtime "Release"
 		optimize "On"
+
+	filter "kind:SharedLib"
+		defines { "BUILD_SHARED_LIB", "EXPORT_DLL" }

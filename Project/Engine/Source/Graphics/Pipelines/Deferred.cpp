@@ -1,5 +1,9 @@
+#include <Engine/Application.hpp>
 #include <Engine/Graphics/Mesh.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Graphics/Renderer.hpp>
+#include <Engine/Graphics/Framebuffer.hpp>
+#include <Engine/Services/SceneService.hpp>
 #include <Engine/Graphics/Pipelines/Deferred.hpp>
 
 #include <Engine/Components/Light.hpp>
@@ -14,10 +18,10 @@ using namespace Engine::Graphics::Pipelines;
 
 DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 {
-	FramebufferSpec framebuffer = { Renderer::GetResolution()};
+	FramebufferSpec framebufferSpecs = { Renderer::GetResolution()};
 
 	// Mesh Pass //
-	framebuffer.Attachments =
+	framebufferSpecs.Attachments =
 	{
 		TextureFormat::RGBA16F,	// Position + Roughness
 		TextureFormat::RGBA16F,	// Normal + Metalness
@@ -25,7 +29,7 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 		TextureFormat::Depth
 	};
 
-	m_MeshPass = new RenderPass(framebuffer);
+	m_MeshPass = new Framebuffer(framebufferSpecs);
 
 	Shader* meshShader = new Shader(ShaderStageInfo
 		{
@@ -39,12 +43,12 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	AddPass(pass);
 
 	// Lighting Pass //
-	framebuffer.Attachments =
+	framebufferSpecs.Attachments =
 	{
 		TextureFormat::RGBA8,
 		TextureFormat::Depth
 	};
-	m_LightingPass = new RenderPass(framebuffer);
+	m_LightingPass = new Framebuffer(framebufferSpecs);
 	pass.Pass = m_LightingPass;
 
 	pass.DrawCallback = bind(&DeferredRenderPipeline::LightingPass, this, ::placeholders::_1);
@@ -58,13 +62,13 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	AddPass(pass);
 	
 	// Forward/Transparent Pass //
-	framebuffer.Attachments =
+	framebufferSpecs.Attachments =
 	{
 		TextureFormat::RGBA8,
 		TextureFormat::Depth
 	};
-	framebuffer.SwapchainTarget = true;
-	m_ForwardPass = new RenderPass(framebuffer);
+	framebufferSpecs.SwapchainTarget = true;
+	m_ForwardPass = new Framebuffer(framebufferSpecs);
 	pass.Pass = m_ForwardPass;
 
 	pass.DrawCallback = bind(&DeferredRenderPipeline::ForwardPass, this, ::placeholders::_1);
@@ -89,7 +93,7 @@ DeferredRenderPipeline::~DeferredRenderPipeline()
 	delete m_LightingPass;
 }
 
-void DeferredRenderPipeline::MeshPass(RenderPass* previous)
+void DeferredRenderPipeline::MeshPass(Framebuffer* previous)
 {
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
@@ -103,7 +107,7 @@ void DeferredRenderPipeline::MeshPass(RenderPass* previous)
 }
 
 const unsigned int MaxLights = 16;
-void DeferredRenderPipeline::LightingPass(RenderPass* previous)
+void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -127,7 +131,8 @@ void DeferredRenderPipeline::LightingPass(RenderPass* previous)
 	shader->Set("inputDepth", 3);
 
 	// FILL LIGHT DATA //
-	auto lights = Renderer::GetApp()->CurrentScene()->Root().GetComponentsInChildren<Light>();
+	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
+	auto lights = scene->Root().GetComponentsInChildren<Light>();
 
 	unsigned int lightIndex = 0;
 	unsigned int lightCount = std::min((unsigned int)lights.size(), MaxLights);
@@ -143,17 +148,18 @@ void DeferredRenderPipeline::LightingPass(RenderPass* previous)
 	}
 
 	// DRAW FULLSCREEN QUAD //
-	Mesh::Quad()->Draw();
+	ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
+
 }
 
-void DeferredRenderPipeline::ForwardPass(RenderPass* previous)
+void DeferredRenderPipeline::ForwardPass(Framebuffer* previous)
 {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	m_MeshPass->GetFramebuffer()->BlitTo(m_ForwardPass->GetFramebuffer(), GL_DEPTH_BUFFER_BIT);
-	m_LightingPass->GetFramebuffer()->BlitTo(m_ForwardPass->GetFramebuffer(), GL_COLOR_BUFFER_BIT);
+	m_MeshPass->BlitTo(m_ForwardPass, GL_DEPTH_BUFFER_BIT);
+	m_LightingPass->BlitTo(m_ForwardPass, GL_COLOR_BUFFER_BIT);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

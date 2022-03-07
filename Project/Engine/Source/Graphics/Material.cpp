@@ -44,3 +44,28 @@ void Material::FillShader(Shader* shader) const
 	BindTexture(3, "material.MetalnessMap", MetalnessMap, shader);
 	BindTexture(4, "material.AmbientOcclusionMap", AmbientOcclusionMap, shader);
 }
+
+void Material::Serialize(DataStream& stream)
+{
+	stream.Serialize(&Albedo);
+	stream.Serialize(&Roughness);
+	stream.Serialize(&Metalness);
+	stream.Serialize(&AlphaClipping);
+	stream.Serialize(&AlphaClipThreshold);
+	stream.Serialize(&TextureCoordinateScale);
+	stream.Serialize(&TextureCoordinateOffset);
+
+	SerializeTexture(stream, AlbedoMap);
+	SerializeTexture(stream, NormalMap);
+	SerializeTexture(stream, RoughnessMap);
+	SerializeTexture(stream, MetalnessMap);
+	SerializeTexture(stream, AmbientOcclusionMap);
+}
+
+void Material::SerializeTexture(DataStream& stream, Texture*& texture)
+{
+	string path = texture ? texture->GetPath() : "";
+	stream.Serialize(&path);
+	if (stream.IsReading() && !path.empty())
+		texture = new Texture(path);
+}

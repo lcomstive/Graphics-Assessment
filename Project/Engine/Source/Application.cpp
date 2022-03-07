@@ -1,7 +1,11 @@
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/Gizmos.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Components/Camera.hpp>
 #include <Engine/Graphics/Renderer.hpp>
+#include <Engine/Graphics/Framebuffer.hpp>
+#include <Engine/Services/SceneService.hpp>
+#include <Engine/Services/ExternalService.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 #include <Engine/Graphics/Pipelines/Deferred.hpp>
 
@@ -10,10 +14,16 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
+#if _WIN32
+#undef max
+#undef min
+#endif
+
 using namespace std;
 using namespace glm;
 using namespace Engine;
 using namespace Engine::Graphics;
+using namespace Engine::Services;
 using namespace Engine::Components;
 
 Application* Application::s_Instance = nullptr;
@@ -24,11 +34,18 @@ const std::string Application::AssetDir = "./Assets/";
 const std::string Application::AssetDir = "../../../Applications/Assets/";
 #endif
 
-Application::Application(ApplicationArgs args)
-	: m_Args(args), m_Window(nullptr), m_Scene(this), m_WindowedResolution(1)
+Application::Application(ApplicationArgs args) :
+	m_Args(args),
+	m_Window(nullptr),
+	m_Gizmos(nullptr),
+	m_Renderer(nullptr),
+	m_Input(new Input()),
+	m_WindowedResolution(1),
+	m_State(ApplicationState::Starting)
 {
 	s_Instance = this;
-	m_Scene.GetPhysics().SetTimestep(m_Args.FixedTimestep);
+
+	// m_Scene.GetPhysics().SetTimestep(s_Args.FixedTimestep);
 
 	m_Args.Samples = std::clamp(m_Args.Samples, 0u, 16u);
 	m_Args.Resolution.x = std::max(m_Args.Resolution.x, 800);
@@ -36,42 +53,58 @@ Application::Application(ApplicationArgs args)
 
 	if (m_Args.Title.empty())
 		m_Args.Title = "Application";
+
+	m_State = ApplicationState::Starting;
 }
 
 void Application::Run()
 {
 	Log::Info("Starting engine..");
 
-	Renderer::s_App = this;
-	Renderer::SetVSync(m_Args.VSync);
-	Renderer::s_Samples = m_Args.Samples;
-	Renderer::s_Resolution = m_Args.Resolution;
+	// Create Resource Manager instance
+	m_ResourceManager = new ResourceManager();
+
+	// Create Renderer instance
+	Renderer::s_Instance = (m_Renderer = new Renderer());
+	m_Renderer->m_Samples = m_Args.Samples;
+	m_Renderer->m_Resolution = m_Args.Resolution;
+
+	// Create Gizmos instance
+	m_Gizmos = new Gizmos();
+	Gizmos::s_Instance = m_Gizmos;
 
 	CreateAppWindow();
-	m_Scene.GetPhysics().Start();
 
 	// Setup Render Pipeline
-	// Renderer::SetPipeline<Pipelines::ForwardRenderPipeline>();
-	Renderer::SetPipeline<Pipelines::DeferredRenderPipeline>();
-
+	Renderer::SetPipeline<Pipelines::ForwardRenderPipeline>();
+	// Renderer::SetPipeline<Pipelines::DeferredRenderPipeline>();
+	
+	Renderer::SetVSync(m_Args.VSync);
 	Renderer::Resized(m_Args.Resolution);
 	
 	SetupGizmos();
+
+	// Load services
+	AddService<SceneService>();
+	AddService<ExternalServices>();
 	
-	OnStart();
+	for (auto& pair : m_Services)
+		pair.second->OnStart();
 
 	// Frame counting
-	Renderer::s_FPS = Renderer::s_DeltaTime = 0;
+	m_Renderer->m_FPS = m_Renderer->m_DeltaTime = 0;
 
 	int frameCount = 0; // Frames counted in the last second
 	float frameCountTime = 0; // How long since the last second has passed
-	float frameStartTime = (Renderer::s_Time = (float)glfwGetTime()); // Game time at start of frame
+	float frameStartTime = (m_Renderer->m_Time = (float)glfwGetTime()); // Game time at start of frame
 
-	while (!glfwWindowShouldClose(m_Window))
+	m_State = ApplicationState::Running;
+	while (!glfwWindowShouldClose(m_Window) && m_State == ApplicationState::Running)
 	{
-		m_Scene.Update((float)Renderer::s_DeltaTime);
-		OnUpdate();
-		Input::Update();
+		float deltaTime = (float)m_Renderer->m_DeltaTime;
+		for (auto& pair : m_Services)
+			pair.second->OnUpdate(deltaTime);
+		Input::s_Instance->Update();
 
 #pragma region Drawing
 		// Setup ImGUI
@@ -79,17 +112,17 @@ void Application::Run()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		glViewport(0, 0, Renderer::s_Resolution.x, Renderer::s_Resolution.y);
+		glViewport(0, 0, m_Renderer->m_Resolution.x, m_Renderer->m_Resolution.y);
 		glEnable(GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
 		glClearColor(0, 0, 0, 1); // Set clear colour to black
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear framebuffer colour & depth
 
-		m_Scene.Draw();
-		OnDraw();
+		for (auto& pair : m_Services)
+			pair.second->OnDraw();
 
-		if(Camera::GetMainCamera())
-			Renderer::GetPipeline()->Draw(*Camera::GetMainCamera());
+		if (Camera::GetMainCamera())
+			m_Renderer->GetPipeline()->Draw(*Camera::GetMainCamera());
 
 		ImGui::Render(); // Draw ImGUI result
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -100,24 +133,22 @@ void Application::Run()
 		glfwPollEvents();
 
 		// Calculate delta time
-		float frameEndTime = (Renderer::s_Time = (float)glfwGetTime());
-		Renderer::s_DeltaTime = frameEndTime - frameStartTime;
+		float frameEndTime = (m_Renderer->m_Time = (float)glfwGetTime());
+		m_Renderer->m_DeltaTime = frameEndTime - frameStartTime;
 		frameStartTime = frameEndTime;
 
 		// Calculate FPS
 		frameCount++;
-		frameCountTime += Renderer::s_DeltaTime;
+		frameCountTime += m_Renderer->m_DeltaTime;
 		if (frameCountTime >= 1.0)
 		{
-			Renderer::s_FPS = float(frameCount);
+			m_Renderer->m_FPS = float(frameCount);
 			frameCount = 0;
 			frameCountTime = 0;
 		}
 	}
 
 	Log::Info("Engine shutting down..");
-
-	m_Scene.GetPhysics().Stop();
 
 	// Close ImGUI
 	ImGui_ImplOpenGL3_Shutdown();
@@ -128,15 +159,30 @@ void Application::Run()
 	glfwDestroyWindow(m_Window);
 	glfwTerminate();
 
-	OnShutdown();
+	for (auto& pair : m_Services)
+	{
+		pair.second->OnShutdown();
+		delete pair.second;
+	}
+	m_Services.clear();
 
+	delete m_Input;
+	delete m_ResourceManager;
+
+	m_Input = nullptr;
 	m_Window = nullptr;
 }
 
-void Application::Exit()
+void Application::Exit() { s_Instance->m_State = ApplicationState::Stopping; }
+
+void Application::UpdateGlobals()
 {
-	if (m_Window)
-		glfwSetWindowShouldClose(m_Window, GLFW_TRUE);
+	s_Instance = this;
+	Input::s_Instance = m_Input;
+	Gizmos::s_Instance = m_Gizmos;
+	Renderer::s_Instance = m_Renderer;
+	ImGui::SetCurrentContext(m_ImGuiContext);
+	ResourceManager::s_Instance = m_ResourceManager;
 }
 
 void Application::CreateAppWindow()
@@ -181,8 +227,6 @@ void Application::CreateAppWindow()
 	glfwMakeContextCurrent(m_Window);
 	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-	Input::s_MainWindow = m_Window;
-
 #if !defined(NDEBUG) && !defined(__APPLE__)
 	// If Debug configuration, enable OpenGL debug output
 	glEnable(GL_DEBUG_OUTPUT);
@@ -193,7 +237,7 @@ void Application::CreateAppWindow()
 #pragma region ImGUI
 	// Initialise ImGUI
 	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+	m_ImGuiContext = ImGui::CreateContext();
 
 	ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
@@ -203,11 +247,17 @@ void Application::CreateAppWindow()
 	Log::Debug("Engine initialised");
 }
 
-Scene* Application::CurrentScene() { return &m_Scene; }
-void Application::SetTitle(std::string title) { glfwSetWindowTitle(m_Window, (m_Args.Title = title).c_str()); }
-bool Application::GetFullscreen() { return m_Args.Fullscreen; }
-void Application::ToggleFullscreen() { SetFullscreen(!m_Args.Fullscreen); }
-void Application::SetFullscreen(bool fullscreen)
+ApplicationState Application::GetState() { return s_Instance->m_State; }
+void Application::SetTitle(std::string title) { glfwSetWindowTitle(s_Instance->m_Window, (s_Instance->m_Args.Title = title).c_str()); }
+bool Application::GetFullscreen() { return s_Instance->m_Args.Fullscreen; }
+void Application::ToggleFullscreen() { SetFullscreen(!s_Instance->m_Args.Fullscreen); }
+
+void Application::ShowMouse(bool show)
+{
+	glfwSetInputMode(s_Instance->m_Window, GLFW_CURSOR, show ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+void Application::_SetFullscreen(bool fullscreen)
 {
 	// BUG/FEATURE: Going back into windowed mode from fullscreen uses initial resolution,
 	//				instead of pre-fullscreen resolutiona
@@ -225,7 +275,9 @@ void Application::SetFullscreen(bool fullscreen)
 
 	m_Args.Resolution = m_Args.Fullscreen ? ivec2 { videoMode->width, videoMode->height } : m_WindowedResolution;
 	Renderer::Resized(m_Args.Resolution);
-	s_Instance->OnResized(m_Args.Resolution);
+
+	for (auto& pair : m_Services)
+		pair.second->OnResized(m_Args.Resolution);
 
 	glfwSetWindowMonitor(
 		m_Window,
@@ -245,20 +297,21 @@ void Application::SetupGizmos()
 	FramebufferSpec spec;
 	spec.Attachments = { TextureFormat::RGBA8, TextureFormat::Depth };
 	spec.Resolution = Renderer::GetResolution();
-	pass.Pass = new RenderPass(spec);
+	pass.Pass = new Framebuffer(spec);
 	pass.Shader = new Shader(ShaderStageInfo
 		{
 			AssetDir + "Shaders/Gizmos.vert",
 			AssetDir + "Shaders/Gizmos.frag"
 		});
-	pass.DrawCallback = [=](RenderPass* previous)
+	pass.DrawCallback = [=](Framebuffer* previous)
 	{
 		// Copy color & depth buffer to this pass
-		previous->GetFramebuffer()->BlitTo(pass.Pass->GetFramebuffer(), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		previous->BlitTo(pass.Pass, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glEnable(GL_DEPTH_TEST);
-		m_Scene.DrawGizmos();
-		OnDrawGizmos();
+
+		for (auto& pair : m_Services)
+			pair.second->OnDrawGizmos();
 
 		Renderer::Draw();
 	};
@@ -276,15 +329,17 @@ void Application::GLFW_ErrorCallback(int error, const char* description)
 	Log::Error("[GLFW] " + string(description));
 }
 
-void Application::GLFW_ScrollCallback(GLFWwindow* window, double xOffset, double yOffset) { Input::s_ScrollDelta += (float)yOffset; }
-void Application::GLFW_CursorPositionCallback(GLFWwindow* window, double xPos, double yPos) { Input::s_MousePos = { xPos, yPos }; }
+void Application::GLFW_ScrollCallback(GLFWwindow* window, double xOffset, double yOffset) { Input::s_Instance->m_ScrollDelta += (float)yOffset; }
+void Application::GLFW_CursorPositionCallback(GLFWwindow* window, double xPos, double yPos) { Input::s_Instance->m_MousePos = { xPos, yPos }; }
 
 void Application::GLFW_FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	ivec2 resolution = { width, height };
 
 	Renderer::Resized(resolution);
-	s_Instance->OnResized(resolution);
+
+	for (auto& pair : s_Instance->m_Services)
+		pair.second->OnResized(resolution);
 
 	if (!s_Instance->m_Args.Fullscreen)
 		s_Instance->m_WindowedResolution = resolution;
@@ -294,8 +349,8 @@ void Application::GLFW_KeyCallback(GLFWwindow* window, int key, int scancode, in
 {
 	switch (action)
 	{
-	case GLFW_PRESS:   Input::s_KeyStates[key] = Input::KeyState::Pressed; break;
-	case GLFW_RELEASE: Input::s_KeyStates[key] = Input::KeyState::Released; break;
+	case GLFW_PRESS:   Input::s_Instance->m_KeyStates[key] = Input::KeyState::Pressed; break;
+	case GLFW_RELEASE: Input::s_Instance->m_KeyStates[key] = Input::KeyState::Released; break;
 	default: break;
 	}
 }
@@ -304,8 +359,8 @@ void Application::GLFW_MouseCallback(GLFWwindow* window, int button, int action,
 {
 	switch (action)
 	{
-	case GLFW_PRESS:   Input::s_MouseStates[button] = Input::KeyState::Pressed; break;
-	case GLFW_RELEASE: Input::s_MouseStates[button] = Input::KeyState::Released; break;
+	case GLFW_PRESS:   Input::s_Instance->m_MouseStates[button] = Input::KeyState::Pressed; break;
+	case GLFW_RELEASE: Input::s_Instance->m_MouseStates[button] = Input::KeyState::Released; break;
 	}
 }
 

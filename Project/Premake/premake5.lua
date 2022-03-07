@@ -7,9 +7,15 @@ workspace "Graphics Engine"
 
 	flags { "MultiProcessorCompile" }
 
-OutputDir = "%{wks.location}/%{cfg.buildcfg}/"
+	OutputDir = "%{wks.location}/%{cfg.buildcfg}/"
 
-include "./Dependencies.lua"
-include "../Engine"
-include "../Applications/Demo"
--- include "../Applications/Editor"
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+
+	filter {}
+
+	include "./Dependencies.lua"
+	include "../Engine"
+	include "../Applications/Demo"
+	include "../Applications/TestService"
+	-- include "../Applications/Editor"

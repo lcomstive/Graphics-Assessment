@@ -26,7 +26,7 @@ PlaneCollider::PlaneCollider(glm::vec3 normal, float distance)
 void PlaneCollider::DrawGizmos()
 {
 #ifndef NDEBUG
-	Gizmos::Colour = { 0, 1, 0, 1 };
+	Gizmos::SetColour(0, 1, 0, 1);
 	Gizmos::DrawWireQuad(
 		m_Plane.Normal * m_Plane.Distance,
 		{ 100.0f, 100.0f },

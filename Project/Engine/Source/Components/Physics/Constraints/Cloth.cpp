@@ -1,5 +1,6 @@
 #include <Engine/Utilities.hpp>
 #include <Engine/GameObject.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Components/Transform.hpp>
 #include <Engine/Components/Physics/SphereCollider.hpp>
@@ -187,7 +188,8 @@ void Cloth::Initialize(unsigned int size, float distance)
 		}
 	}
 
-	m_Mesh = new Mesh(meshVerts);
+	m_MeshID = ResourceManager::Load<Mesh>(meshVerts);
+	m_Mesh = ResourceManager::Get<Mesh>(m_MeshID);
 }
 
 void Cloth::Clear()
@@ -283,5 +285,5 @@ void Cloth::Draw()
 
 	m_Mesh->SetData(verts);
 
-	Renderer::Submit(m_Mesh, Material, GetTransform());
+	Renderer::Submit(m_MeshID, Material, GetTransform());
 }

@@ -1,8 +1,10 @@
 #include "Demo.hpp"
+#include <Engine/Application.hpp>
 
+using namespace Engine;
 using namespace std::chrono_literals; // seconds in literal
 
-Engine::ApplicationArgs applicationArgs =
+ApplicationArgs applicationArgs =
 {
 	false,			// VSync
 	8,				// Samples
@@ -17,7 +19,8 @@ int __stdcall WinMain(void*, void*, char*, int)
 int main()
 #endif
 {
-	Demo demo(applicationArgs);
-	demo.Run();
+	Application app(applicationArgs);
+	app.AddService<Demo>();
+	app.Run();
 	return 0;
 }

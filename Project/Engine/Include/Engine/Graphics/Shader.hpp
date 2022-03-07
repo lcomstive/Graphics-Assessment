@@ -51,15 +51,15 @@ namespace Engine::Graphics
 		unsigned int GetProgram();
 		unsigned int GetUniformCount();
 
-		void Set(int location, int value) const;
-		void Set(int location, bool value) const;
-		void Set(int location, float value) const;
-		void Set(int location, double value) const;
-		void Set(int location, glm::vec2 value) const;
-		void Set(int location, glm::vec3 value) const;
-		void Set(int location, glm::vec4 value) const;
-		void Set(int location, glm::mat3 value) const;
-		void Set(int location, glm::mat4 value) const;
+		void Set(int& location, int value) const;
+		void Set(int& location, bool value) const;
+		void Set(int& location, float value) const;
+		void Set(int& location, double value) const;
+		void Set(int& location, glm::vec2 value) const;
+		void Set(int& location, glm::vec3 value) const;
+		void Set(int& location, glm::vec4 value) const;
+		void Set(int& location, glm::mat3 value) const;
+		void Set(int& location, glm::mat4 value) const;
 
 		void Set(std::string locationName, int value);
 		void Set(std::string locationName, bool value);
@@ -75,6 +75,6 @@ namespace Engine::Graphics
 		ShaderUniform& GetUniformInfo(int location);
 
 		/// <returns>Information about the uniform at locationName, or an invalid struct if not found</returns>
-		ShaderUniform& GetUniformInfo(std::string locationName);
+		ShaderUniform& GetUniformInfo(std::string& locationName);
 	};
 }

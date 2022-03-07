@@ -5,7 +5,9 @@ namespace Engine::Graphics::Pipelines
 {
 	class ForwardRenderPipeline : public RenderPipeline
 	{
-		void ForwardPass(RenderPass* previous);
+		Framebuffer* m_ForwardPass = nullptr;
+
+		void ForwardPass(Framebuffer* previous);
 		
 	public:
 		ForwardRenderPipeline();

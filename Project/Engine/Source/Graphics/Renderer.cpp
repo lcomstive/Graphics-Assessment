@@ -2,8 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Components/Camera.hpp>
 #include <Engine/Graphics/Renderer.hpp>
+#include <Engine/Components/Transform.hpp>
 
 using namespace std;
 using namespace glm;
@@ -11,35 +13,46 @@ using namespace Engine;
 using namespace Engine::Graphics;
 using namespace Engine::Components;
 
-float Renderer::s_FPS = 0;
-Application* Renderer::s_App = nullptr;
-float Renderer::s_Time = 0;
-bool Renderer::s_VSync = false;
-uint32_t Renderer::s_Samples = 1;
-float Renderer::s_DeltaTime = 0;
-bool Renderer::s_Wireframe = false;
-ivec2 Renderer::s_Resolution = { 0, 0 };
-RenderPipeline* Renderer::s_Pipeline = nullptr;
+Renderer* Renderer::s_Instance = nullptr;
 
-vector<DrawCall> Renderer::s_DrawQueue = {};
+Renderer::Renderer() :
+	m_FPS(0),
+	m_Time(0),
+	m_Samples(1),
+	m_DrawQueue(),
+	m_DeltaTime(0),
+	m_VSync(false),
+	m_Resolution(0),
+	m_Wireframe(false),
+	m_Pipeline(nullptr)
+{
+	if (!s_Instance)
+		s_Instance = this;
+}
 
-void Renderer::SetVSync(bool vsync) { glfwSwapInterval(s_VSync = vsync ? 1 : 0); }
-void Renderer::SetWireframe(bool wireframe) { glPolygonMode(GL_FRONT_AND_BACK, (s_Wireframe = wireframe) ? GL_LINE : GL_FILL); }
+Renderer::~Renderer()
+{
+	if (s_Instance == this)
+		s_Instance = nullptr;
+}
 
-float Renderer::GetFPS() { return s_FPS; }
-float Renderer::GetTime() { return s_Time; }
-bool Renderer::GetVSync() { return s_VSync; }
-uint32_t Renderer::GetSamples() { return s_Samples; }
-float Renderer::GetDeltaTime() { return s_DeltaTime; }
-Application* Renderer::GetApp() { return s_App; }
-ivec2 Renderer::GetResolution() { return s_Resolution; }
-bool Renderer::GetWireframeMode() { return s_Wireframe; }
-RenderPipeline* Renderer::GetPipeline() { return s_Pipeline; }
+void Renderer::SetVSync(bool vsync) { glfwSwapInterval(s_Instance->m_VSync = vsync ? 1 : 0); }
+void Renderer::SetWireframe(bool wireframe) { glPolygonMode(GL_FRONT_AND_BACK, (s_Instance->m_Wireframe = wireframe) ? GL_LINE : GL_FILL); }
+
+float Renderer::GetFPS() { return s_Instance->m_FPS; }
+float Renderer::GetTime() { return s_Instance->m_Time; }
+bool Renderer::GetVSync() { return s_Instance->m_VSync; }
+uint32_t Renderer::GetSamples() { return s_Instance->m_Samples; }
+float Renderer::GetDeltaTime() { return s_Instance->m_DeltaTime; }
+ivec2 Renderer::GetResolution() { return s_Instance->m_Resolution; }
+bool Renderer::GetWireframeMode() { return s_Instance->m_Wireframe; }
+RenderPipeline* Renderer::GetPipeline() { return s_Instance->m_Pipeline; }
 
 void Renderer::Shutdown()
 {
-	if (s_Pipeline)
-		delete s_Pipeline;
+	if (s_Instance->m_Pipeline)
+		delete s_Instance->m_Pipeline;
+	s_Instance = nullptr;
 }
 
 void Renderer::SortDrawQueue(DrawSortType sortType)
@@ -49,7 +62,7 @@ void Renderer::SortDrawQueue(DrawSortType sortType)
 	if (sortType == DrawSortType::None || !camera)
 		return;
 
-	sort(s_DrawQueue.begin(), s_DrawQueue.end(), [=](DrawCall& a, DrawCall& b)
+	sort(s_Instance->m_DrawQueue.begin(), s_Instance->m_DrawQueue.end(), [=](DrawCall& a, DrawCall& b)
 		{
 			float distanceA = glm::distance(cameraPos, a.Position);
 			float distanceB = glm::distance(cameraPos, b.Position);
@@ -60,10 +73,15 @@ void Renderer::SortDrawQueue(DrawSortType sortType)
 void Renderer::Draw(DrawArgs args)
 {
 	SortDrawQueue(args.DrawSorting);
-	Shader* shader = s_Pipeline->CurrentShader();
+	Shader* shader = s_Instance->m_Pipeline->CurrentShader();
 
-	for(const DrawCall& drawCall : s_DrawQueue)
+	for (const DrawCall& drawCall : s_Instance->m_DrawQueue)
 	{
+		if (drawCall.Mesh == InvalidResourceID)
+			continue;
+		Mesh* mesh = ResourceManager::Get<Mesh>(drawCall.Mesh);
+		if (!mesh) continue;
+
 		if (!args.RenderOpaque && drawCall.Material.Albedo.a >= 1.0f)
 			continue;
 		if (!args.RenderTransparent && drawCall.Material.Albedo.a < 1.0f)
@@ -80,10 +98,10 @@ void Renderer::Draw(DrawArgs args)
 
 		Renderer::SetWireframe(drawCall.Material.Wireframe);
 
-		drawCall.Mesh->Draw();
+		mesh->Draw();
 
 		if (drawCall.DeleteMeshAfterRender)
-			delete drawCall.Mesh;
+			ResourceManager::Unload(drawCall.Mesh);
 	}
 
 	if (args.ClearQueue)
@@ -92,22 +110,22 @@ void Renderer::Draw(DrawArgs args)
 
 void Renderer::Resized(glm::ivec2 newResolution)
 {
-	s_Resolution = newResolution;
-	if (s_Pipeline)
-		s_Pipeline->OnResized(s_Resolution);
+	s_Instance->m_Resolution = newResolution;
+	if (s_Instance->m_Pipeline)
+		s_Instance->m_Pipeline->OnResized(s_Instance->m_Resolution);
 }
 
 void Renderer::ClearDrawQueue()
 {
-	s_DrawQueue.clear();
+	s_Instance->m_DrawQueue.clear();
 }
 
-void Renderer::Submit(Mesh* mesh, Material& material, vec3 position, vec3 scale, vec3 rotation)
+void Renderer::Submit(ResourceID& mesh, Material& material, vec3 position, vec3 scale, vec3 rotation)
 {
 	Submit(mesh, material, position, scale, eulerAngleXYZ(rotation.x, rotation.y, rotation.z));
 }
 
-void Renderer::Submit(Mesh* mesh, Material& material, vec3 position, vec3 scale, mat4 rotation)
+void Renderer::Submit(ResourceID& mesh, Material& material, vec3 position, vec3 scale, mat4 rotation)
 {
 	Submit(DrawCall
 		{
@@ -120,7 +138,7 @@ void Renderer::Submit(Mesh* mesh, Material& material, vec3 position, vec3 scale,
 }
 
 
-void Renderer::Submit(Mesh* mesh, Material& material, Components::Transform* transform)
+void Renderer::Submit(ResourceID& mesh, Material& material, Components::Transform* transform)
 {
 	Submit(DrawCall
 		{
@@ -132,11 +150,4 @@ void Renderer::Submit(Mesh* mesh, Material& material, Components::Transform* tra
 		});
 }
 
-void Renderer::Submit(DrawCall drawCall)
-{
-#if !SORTED_DRAW_CALLS
-	s_DrawQueue.emplace_back(drawCall);
-#else
-	s_DrawQueue.emplace(drawCall);
-#endif
-}
+void Renderer::Submit(DrawCall drawCall) { s_Instance->m_DrawQueue.emplace_back(drawCall); }

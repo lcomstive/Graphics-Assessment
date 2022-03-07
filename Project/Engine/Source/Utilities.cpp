@@ -35,7 +35,7 @@ string Engine::ReadText(std::string path)
 	return contents;
 }
 
-vector<unsigned char> Engine::Read(std::string path)
+vector<unsigned char> Engine::Read(string path)
 {
 	if (!fs::exists(path))
 	{
@@ -58,6 +58,22 @@ vector<unsigned char> Engine::Read(std::string path)
 	filestream.close();
 
 	return contents;
+}
+
+void Engine::WriteText(string path, string contents)
+{
+	ofstream filestream(path, ios::out | ios::binary);
+	filestream.write(contents.c_str(), contents.size());
+	filestream.flush();
+	filestream.close();
+}
+
+void Engine::Write(string path, vector<unsigned char> data)
+{
+	ofstream filestream(path, ios::out | ios::binary);
+	filestream.write((const char*)data.data(), data.size());
+	filestream.flush();
+	filestream.close();
 }
 
 float Engine::Magnitude(vec3 vector) { return sqrt(MagnitudeSqr(vector)); }

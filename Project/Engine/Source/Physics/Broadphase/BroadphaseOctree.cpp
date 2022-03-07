@@ -43,7 +43,7 @@ void DrawOctreeNode(OctreeNode& node)
 {
 	if (!node.Children)
 	{
-		Gizmos::Colour = { 0, 0, 1, 1 };
+		Gizmos::SetColour(0, 0, 1, 1);
 		Gizmos::DrawWireCube(node.Bounds.Position, node.Bounds.Extents);
 		return;
 	}

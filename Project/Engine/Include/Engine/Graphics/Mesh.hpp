@@ -2,9 +2,14 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glad/glad.h>
+#include <Engine/ResourceID.hpp>
+
+namespace Engine { class Application; }
 
 namespace Engine::Graphics
 {
+	const unsigned int MeshPrimitiveCount = 4;
+	
 	class Mesh
 	{
 	public:
@@ -32,6 +37,7 @@ namespace Engine::Graphics
 	private:
 		unsigned int m_VBO, m_VAO, m_EBO;
 
+		bool m_Setup;
 		DrawMode m_DrawMode;
 		std::vector<Vertex> m_Vertices;
 		std::vector<unsigned int> m_Indices;
@@ -49,10 +55,10 @@ namespace Engine::Graphics
 		std::vector<Vertex>& GetVertices() { return m_Vertices; }
 		std::vector<unsigned int>& GetIndices() { return m_Indices; }
 
-		static Mesh* Quad();
-		static Mesh* Cube();
-		static Mesh* Line();
-		static Mesh* Grid(unsigned int size);
-		static Mesh* Sphere();
+		static ResourceID& Quad();
+		static ResourceID& Cube();
+		static ResourceID& Line();
+		static ResourceID& Sphere();
+		static ResourceID Grid(unsigned int size);
 	};
 }

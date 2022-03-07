@@ -15,8 +15,7 @@ using namespace Engine::Components;
 
 const vec3 InitialGravity = { 0, -9.81f, 0 };
 
-PhysicsSystem::PhysicsSystem(Application* app, milliseconds fixedTimestep) :
-	m_App(app),
+PhysicsSystem::PhysicsSystem(milliseconds fixedTimestep) :
 	m_Thread(),
 	m_Substeps(5),
 	m_CollidersMutex(),
@@ -279,7 +278,7 @@ Collider* PhysicsSystem::Raycast(Ray ray, Collider* ignoreCollider, RaycastHit* 
 void PhysicsSystem::DrawGizmos()
 {
 #if !defined(NDEBUG) && DRAW_CONTACTS
-	Gizmos::Colour = { 0, 0, 1, 1 };
+	Gizmos::SetColour(0, 0, 1, 1);
 	for (CollisionFrame& collision : m_Collisions)
 	{
 		for (vec3& contact : collision.Result.Contacts)

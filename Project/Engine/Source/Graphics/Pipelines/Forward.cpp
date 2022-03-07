@@ -1,5 +1,7 @@
+#include <Engine/Application.hpp>
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
+#include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 
 using namespace glm;
@@ -11,8 +13,8 @@ using namespace Engine::Graphics::Pipelines;
 
 ForwardRenderPipeline::ForwardRenderPipeline() 
 {
-	FramebufferSpec framebuffer = { Renderer::GetResolution() };
-	framebuffer.Attachments =
+	FramebufferSpec framebufferSpecs = { Renderer::GetResolution() };
+	framebufferSpecs.Attachments =
 	{
 		TextureFormat::RGBA8,
 		TextureFormat::Depth
@@ -23,7 +25,8 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 			Application::AssetDir + "Shaders/Forward/Mesh.vert",
 			Application::AssetDir + "Shaders/Forward/Mesh.frag"
 		});
-	RenderPipelinePass pass = { shader, new RenderPass(framebuffer) };
+	m_ForwardPass = new Framebuffer(framebufferSpecs);
+	RenderPipelinePass pass = { shader, m_ForwardPass };
 	pass.DrawCallback = bind(&ForwardRenderPipeline::ForwardPass, this, ::placeholders::_1);
 
 	AddPass(pass);
@@ -31,12 +34,12 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 
 ForwardRenderPipeline::~ForwardRenderPipeline()
 {
-	RenderPass* forwardPass = m_RenderPasses[0].Pass;
+	Framebuffer* forwardPass = m_RenderPasses[0].Pass;
 	RemovePass(forwardPass);
 	delete forwardPass;
 }
 
-void ForwardRenderPipeline::ForwardPass(RenderPass* previous)
+void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 0);

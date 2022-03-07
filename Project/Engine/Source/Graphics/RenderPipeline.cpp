@@ -1,25 +1,31 @@
 #include <algorithm>
+#include <Engine/Application.hpp>
 #include <Engine/Graphics/Mesh.hpp>
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Components/Camera.hpp>
+#include <Engine/Graphics/Framebuffer.hpp>
+#include <Engine/Services/SceneService.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
 
 using namespace glm;
 using namespace std;
 using namespace Engine;
+using namespace Engine::Services;
 using namespace Engine::Graphics;
 using namespace Engine::Components;
 
 void RenderPipeline::Draw(Camera& camera)
 {
+	Scene* scene = Application::GetService<SceneService>()->CurrentScene();
+
 	m_PreviousPass = nullptr;
 	for(unsigned int i = 0; i < (unsigned int)m_RenderPasses.size(); i++)
 	{
 		RenderPipelinePass& info = m_RenderPasses[i];
 
 		// Setup
-		info.Pass->Begin();
+		info.Pass->Bind();
 
 		m_CurrentShader = info.Shader;
 		if (m_CurrentShader)
@@ -32,7 +38,7 @@ void RenderPipeline::Draw(Camera& camera)
 
 			camera.FillShader(m_CurrentShader);
 
-			auto lights = Scene::GetActive()->Root().GetComponentsInChildren<Light>();
+			auto lights = scene->Root().GetComponentsInChildren<Light>();
 			int lightCount = std::min((int32_t)lights.size(), 64);
 			m_CurrentShader->Set("lightCount", lightCount);
 			for(int i = 0; i < lightCount; i++)
@@ -52,18 +58,18 @@ void RenderPipeline::Draw(Camera& camera)
 			m_CurrentShader->Unbind();
 
 		m_CurrentShader = nullptr;
-		info.Pass->End();
+		info.Pass->Unbind();
 		m_PreviousPass = info.Pass;
 	}
 
 	if (camera.RenderTarget && !m_RenderPasses.empty())
-		m_RenderPasses[m_RenderPasses.size() - 1].Pass->GetFramebuffer()->CopyAttachmentTo(camera.RenderTarget);
+		m_RenderPasses[m_RenderPasses.size() - 1].Pass->CopyAttachmentTo(camera.RenderTarget);
 	else if(m_PreviousPass)
-		m_PreviousPass->GetFramebuffer()->BlitTo(nullptr, GL_COLOR_BUFFER_BIT);
+		m_PreviousPass->BlitTo(nullptr, GL_COLOR_BUFFER_BIT);
 	m_PreviousPass = nullptr;
 }
 
-void RenderPipeline::RemovePass(RenderPass* pass)
+void RenderPipeline::RemovePass(Framebuffer* pass)
 {
 	for (int i = (int)m_RenderPasses.size() - 1; i >= 0; i--)
 	{
@@ -86,8 +92,8 @@ RenderTexture* RenderPipeline::GetOutputAttachment(unsigned int index)
 	if (m_RenderPasses.empty())
 		return nullptr;
 
-	RenderPass* pass = m_RenderPasses[m_RenderPasses.size() - 1].Pass;
-	index = std::clamp(index, 0u, pass->GetColourAttachmentCount());
+	Framebuffer* pass = m_RenderPasses[m_RenderPasses.size() - 1].Pass;
+	index = std::clamp(index, 0u, pass->ColourAttachmentCount());
 	return pass->GetColourAttachment(index);
 }
 
@@ -95,8 +101,8 @@ void RenderPipeline::OnResized(ivec2 resolution)
 {
 	for (RenderPipelinePass& pass : m_RenderPasses)
 		if (pass.ResizeWithScreen)
-			pass.Pass->GetFramebuffer()->SetResolution(resolution);
+			pass.Pass->SetResolution(resolution);
 }
 
 Shader* RenderPipeline::CurrentShader() { return m_CurrentShader; }
-RenderPass* RenderPipeline::GetPreviousPass() { return m_PreviousPass; }
+Framebuffer* RenderPipeline::GetPreviousPass() { return m_PreviousPass; }

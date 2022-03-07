@@ -5,11 +5,11 @@ namespace Engine::Graphics::Pipelines
 {
 	class DeferredRenderPipeline : public RenderPipeline
 	{
-		RenderPass *m_MeshPass, *m_LightingPass, *m_ForwardPass;
+		Framebuffer *m_MeshPass, *m_LightingPass, *m_ForwardPass;
 
-		void MeshPass(RenderPass* previous);
-		void ForwardPass(RenderPass* previous);
-		void LightingPass(RenderPass* previous);
+		void MeshPass(Framebuffer* previous);
+		void ForwardPass(Framebuffer* previous);
+		void LightingPass(Framebuffer* previous);
 
 	public:
 		DeferredRenderPipeline();

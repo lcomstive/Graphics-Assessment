@@ -31,7 +31,7 @@ void BoxCollider::DrawGizmos()
 {
 #ifndef NDEBUG
 	Transform* transform = GetTransform();
-	Gizmos::Colour = { 0, 1, 0, 1 };
+	Gizmos::SetColour(0, 1, 0, 1);
 	Gizmos::DrawWireCube(
 		m_Bounds.Position,
 		m_Bounds.Extents,

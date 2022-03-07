@@ -10,8 +10,8 @@ namespace Engine::Components
 	{
 		struct MeshInfo
 		{
-			Engine::Graphics::Mesh* Mesh = nullptr;
-			Engine::Graphics::Material Material;
+			ResourceID Mesh = InvalidResourceID;
+			Graphics::Material Material = {};
 		};
 
 		std::vector<MeshInfo> Meshes;

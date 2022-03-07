@@ -5,13 +5,7 @@ using namespace std;
 using namespace Engine;
 using namespace Engine::Physics;
 
-Scene* Scene::s_Active = nullptr;
-
-Scene::Scene(Application* app, string name) : m_Name(name), m_Root(this, "Root"), m_Physics(app)
-{
-	if (!s_Active)
-		SetActive();
-}
+Scene::Scene(string name) : m_Name(name), m_Root(this, "Root"), m_Physics() { }
 
 GameObject& Scene::Root() { return m_Root; }
 PhysicsSystem& Scene::GetPhysics() { return m_Physics; }
@@ -26,7 +20,3 @@ void Scene::DrawGizmos()
 	m_Root.DrawGizmos();
 	m_Physics.DrawGizmos();
 }
-
-
-void Scene::SetActive() { s_Active = this; }
-Scene* Scene::GetActive() { return s_Active; }

@@ -23,22 +23,26 @@ project "Demo"
 		"%{IncludeDir.ImGUI}",
 		"%{IncludeDir.Assimp}",
 		"%{IncludeDir.termcolor}",
-		"%{IncludeDir.termcolor}",
 		"%{wks.location}/../Engine/Include"
 	}
 
 	links
 	{
-		"Engine",
-		"Glad",
-		"GLFW",
-		"ImGUI",
-		"Assimp"
+		"Engine"
 	}
+
+	local fileExt = ''
 
 	filter "system:windows"
 		systemversion "latest" -- Windows SDK Version
+		fileExt = '.exe'
+
+	filter { "system:windows", "configurations:Debug" }
 		debugdir "%{OutputDir}%{prj.name}"
+
+	filter { "system:windows", "configurations:Release" }
+		kind "WindowedApp"
+		debugdir(OutputDir .. "Binaries/")
 
 	filter "configurations:Debug"
 		runtime "Debug"
@@ -50,5 +54,7 @@ project "Demo"
 
 		postbuildcommands
 		{
-			"{COPYDIR} \"%{wks.location}../Applications/Assets\" \"%{OutputDir}%{prj.name}/Assets/\""
+			"{MKDIR} \"" .. OutputDir .. "Binaries/\"",
+			"{COPYFILE} \"" .. OutputDir .. "%{prj.name}/%{prj.name}" .. fileExt .. "\" \"" .. OutputDir .. "Binaries/%{prj.name}" .. fileExt .. "\"",
+			"{COPYDIR} \"%{wks.location}../Applications/Assets/\" \"" .. OutputDir .. "Binaries/Assets/\""
 		}

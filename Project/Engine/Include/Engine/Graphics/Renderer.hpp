@@ -3,17 +3,19 @@
 #include <mutex>
 #include <vector>
 #include <glm/glm.hpp>
+#include <Engine/ResourceID.hpp>
 #include <Engine/Graphics/Mesh.hpp>
+#include <Engine/Graphics/Gizmos.hpp>
 #include <Engine/Graphics/Material.hpp>
-#include <Engine/Components/Camera.hpp>
-#include <Engine/Components/Transform.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
+
+namespace Engine::Components { struct Transform; }
 
 namespace Engine::Graphics
 {
 	struct DrawCall
 	{
-		Mesh* Mesh;
+		ResourceID Mesh;
 		Material Material;
 
 		glm::vec3 Position = { 0, 0, 0 };
@@ -21,6 +23,18 @@ namespace Engine::Graphics
 		glm::mat4 Rotation = glm::mat4(1.0f);
 
 		bool DeleteMeshAfterRender = false;
+
+		// Copy constructor
+		DrawCall& operator =(const DrawCall& other)
+		{
+			Mesh = other.Mesh;
+			Scale = other.Scale;
+			Rotation = other.Rotation;
+			Material = other.Material;
+			Position = other.Position;
+			DeleteMeshAfterRender = other.DeleteMeshAfterRender;
+			return *this;
+		}
 
 		bool operator ==(const DrawCall& b)
 		{
@@ -45,18 +59,21 @@ namespace Engine::Graphics
 
 	class Renderer
 	{
-		static uint32_t s_Samples;
-		static Application* s_App;
-		static glm::ivec2 s_Resolution;
-		static bool s_Wireframe, s_VSync;
-		static RenderPipeline* s_Pipeline;
-		static float s_Time, s_FPS, s_DeltaTime;
+		uint32_t m_Samples;
+		glm::ivec2 m_Resolution;
+		bool m_Wireframe, m_VSync;
+		RenderPipeline* m_Pipeline;
+		float m_Time, m_FPS, m_DeltaTime;
+		std::vector<DrawCall> m_DrawQueue;
 
-		static std::vector<DrawCall> s_DrawQueue;
+		static Renderer* s_Instance;
 
 		static void Shutdown();
 		static void Resized(glm::ivec2 newResolution);
 		static void SortDrawQueue(DrawSortType sortType);
+
+		Renderer();
+		~Renderer();
 
 		friend class Engine::Application;
 
@@ -65,9 +82,9 @@ namespace Engine::Graphics
 
 		static void ClearDrawQueue();
 		static void Submit(DrawCall drawCall);
-		static void Submit(Mesh* mesh, Material& material, Components::Transform* transform);
-		static void Submit(Mesh* mesh, Material& material, glm::vec3 position, glm::vec3 scale, glm::mat4 rotation);
-		static void Submit(Mesh* mesh, Material& material, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
+		static void Submit(ResourceID& mesh, Material& material, Components::Transform* transform);
+		static void Submit(ResourceID& mesh, Material& material, glm::vec3 position, glm::vec3 scale, glm::mat4 rotation);
+		static void Submit(ResourceID& mesh, Material& material, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
 
 #pragma region Setters
 		static void SetVSync(bool vsync = true);
@@ -77,10 +94,10 @@ namespace Engine::Graphics
 		static T* SetPipeline()
 		{
 			Log::Assert(std::is_base_of<RenderPipeline, T>(), "Pipeline needs to inherit from Engine::Graphics::RenderPipeline");
-			if (s_Pipeline)
-				delete s_Pipeline;
-			s_Pipeline = new T();
-			return (T*)s_Pipeline;
+			if (s_Instance->m_Pipeline)
+				delete s_Instance->m_Pipeline;
+			s_Instance->m_Pipeline = new T();
+			return (T*)s_Instance->m_Pipeline;
 		}
 #pragma endregion
 
@@ -90,7 +107,6 @@ namespace Engine::Graphics
 		static float GetTime();
 		static uint32_t GetSamples();
 		static float GetDeltaTime();
-		static Application* GetApp();
 		static bool GetWireframeMode();
 		static glm::ivec2 GetResolution();
 		static RenderPipeline* GetPipeline();

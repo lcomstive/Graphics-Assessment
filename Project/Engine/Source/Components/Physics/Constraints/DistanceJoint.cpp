@@ -38,7 +38,7 @@ void DistanceJoint::DrawGizmos()
 {
 #ifndef NDEBUG
 	// Draw joint between two points
-	Gizmos::Colour = { 0, 0, 1, 1 };
+	Gizmos::SetColour(0, 0, 1, 1);
 	Gizmos::DrawLine(m_Body1->GetTransform()->Position, m_Body2->GetTransform()->Position);
 #endif
 }

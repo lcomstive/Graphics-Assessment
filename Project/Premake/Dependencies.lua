@@ -3,9 +3,9 @@ DependencyDir = "%{wks.location}/../Dependencies/"
 IncludeDir = {}
 IncludeDir["STB"] = "%{DependencyDir}stb"
 IncludeDir["GLM"] = "%{DependencyDir}glm"
+IncludeDir["ImGUI"] = "%{DependencyDir}imgui"
 IncludeDir["Glad"] = "%{DependencyDir}glad/include"
 IncludeDir["GLFW"] = "%{DependencyDir}glfw/include"
-IncludeDir["ImGUI"] = "%{DependencyDir}imgui"
 IncludeDir["Assimp"] = "%{DependencyDir}assimp/include"
 IncludeDir["termcolor"] = "%{DependencyDir}termcolor/include"
 

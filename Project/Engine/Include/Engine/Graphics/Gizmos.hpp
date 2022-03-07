@@ -1,21 +1,33 @@
 #pragma once
 #pragma once
 #include <glm/glm.hpp>
+#include <Engine/ResourceID.hpp>
 #include <Engine/Graphics/Mesh.hpp>
 #include <Engine/Physics/Shapes.hpp>
 #include <Engine/Graphics/Shader.hpp>
 #include <Engine/Graphics/Material.hpp>
 
+namespace Engine { class Application; }
+
 namespace Engine::Graphics
 {
 	class Gizmos
 	{
-		static Material s_Material;
+		Material m_Material;
+
+		static Gizmos* s_Instance;
+
+		Gizmos();
+		~Gizmos();
+
+		friend class Application;
 
 	public:
-		static glm::vec4 Colour;
+		static void SetColour(glm::vec3 colour);
+		static void SetColour(glm::vec4 colour);
+		static void SetColour(float r, float g, float b, float a = 1.0f);
 
-		static void Draw(Mesh* mesh, glm::vec3 position = { 0, 0, 0 }, glm::vec3 scale = { 1, 1, 1 }, glm::vec3 rotation = { 0, 0, 0 });
+		static void Draw(ResourceID& mesh, glm::vec3 position = { 0, 0, 0 }, glm::vec3 scale = { 1, 1, 1 }, glm::vec3 rotation = { 0, 0, 0 });
 		
 		static void DrawGrid(glm::vec3 position, unsigned int gridSize, glm::vec3 scale = { 1, 1, 1 }, glm::vec3 rotation = { 0, 0, 0 });
 
