@@ -1,6 +1,7 @@
 #pragma once
 #include <typeindex>
 #include <unordered_map>
+#include <Engine/Api.hpp>
 #include <Engine/Log.hpp>
 #include <Engine/ResourceID.hpp>
 
@@ -8,7 +9,7 @@ namespace Engine
 {
 	class Application; // Forward declaration
 
-	class ResourceManager
+	class ENGINE_API ResourceManager
 	{
 		static ResourceManager* s_Instance;
 
@@ -21,7 +22,7 @@ namespace Engine
 		};
 
 		std::unordered_map<ResourceID, ResourceInstance> m_Instances;
-		std::unordered_map<std::string, ResourceInstance> m_NamedInstances;
+		std::unordered_map<std::string, ResourceID> m_NamedInstances; // Name -> ResourceID
 
 		ResourceManager();
 		~ResourceManager();
@@ -43,21 +44,15 @@ namespace Engine
 		}
 		
 		template<typename T, class... Args>
-		T* _LoadNamed(std::string& name, Args... constructorArgs)
+		ResourceID _LoadNamed(std::string& name, Args... constructorArgs)
 		{
-			T* instance = _Get<T>(name);
-			if (instance)
-				return instance;
+			auto& it = m_NamedInstances.find(name);
+			if (it != m_NamedInstances.end())
+				return it->second;
 
-			m_NamedInstances.emplace(name,
-				ResourceInstance
-				{
-					nullptr,
-					typeid(T)
-				});
-			instance = new T(constructorArgs...);
-			m_NamedInstances.at(name).Data = instance;
-			return instance;
+			ResourceID id = _Load<T, Args...>(constructorArgs...);
+			m_NamedInstances.emplace(make_pair(name, id));
+			return id;
 		}
 
 		template<typename T>
@@ -80,12 +75,7 @@ namespace Engine
 			auto& it = m_NamedInstances.find(name);
 			if (it == m_NamedInstances.end())
 				return nullptr;
-#ifndef NDEBUG
-			Log::Assert(it->second.Type == typeid(T),
-				"Tried getting type by resource name '" + name + "' but types did not match - '" +
-					string(it->second.Type.name()) + "' != " + string(typeid(T).name()) + "'");
-#endif
-			return (T*)it->second.Data;
+			return _Get<T>(it->second);
 		}
 
 		void _Unload(ResourceID id);
@@ -94,6 +84,7 @@ namespace Engine
 		void _UnloadAll();
 		bool _IsValid(ResourceID& id);
 		bool _IsValid(std::string& name);
+		std::string _GetName(ResourceID id);
 
 		std::type_index _GetType(ResourceID& id);
 		std::type_index _GetType(std::string& name);
@@ -103,13 +94,15 @@ namespace Engine
 		static ResourceID Load(Args... constructorArgs) { return s_Instance->_Load<T, Args...>(constructorArgs...); }
 
 		template<typename T, class... Args>
-		static T* LoadNamed(std::string name, Args... constructorArgs) { return s_Instance->_LoadNamed<T, Args...>(name, constructorArgs...); }
+		static ResourceID LoadNamed(std::string name, Args... constructorArgs) { return s_Instance->_LoadNamed<T, Args...>(name, constructorArgs...); }
 
 		template<typename T>
 		static T* Get(ResourceID id) { return s_Instance->_Get<T>(id); }
 
 		template<typename T>
 		static T* Get(std::string name) { return s_Instance->_Get<T>(name); }
+
+		static std::string GetName(ResourceID id) { return s_Instance->_GetName(id); }
 
 		static void Unload(ResourceID id) { return s_Instance->_Unload(id); }
 		static void Unload(std::string name) { return s_Instance->_Unload(name); }
@@ -119,8 +112,8 @@ namespace Engine
 		static bool IsValid(ResourceID id) { return s_Instance->_IsValid(id); }
 		static bool IsValid(std::string name) { return s_Instance->_IsValid(name); }
 
-		static std::type_index& GetType(ResourceID id) { return s_Instance->_GetType(id); }
-		static std::type_index& GetType(std::string name) { return s_Instance->_GetType(name); }
+		static std::type_index GetType(ResourceID id) { return s_Instance->_GetType(id); }
+		static std::type_index GetType(std::string name) { return s_Instance->_GetType(name); }
 
 		template<typename T>
 		static bool IsType(ResourceID id) { return GetType(id) == typeid(T); }

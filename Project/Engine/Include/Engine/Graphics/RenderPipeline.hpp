@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <functional>
+#include <Engine/Api.hpp>
 #include <Engine/Components/Camera.hpp>
 
 #define MAX_LIGHTS 100
@@ -10,15 +11,15 @@ namespace Engine::Graphics
 	class Shader; // Forward declaration
 	class Framebuffer;
 
-	struct RenderPipelinePass
+	struct ENGINE_API RenderPipelinePass
 	{
-		Shader* Shader;
-		Framebuffer* Pass;
-		std::function<void(Framebuffer* previous)> DrawCallback;
+		Shader* Shader = nullptr;
+		Framebuffer* Pass = nullptr;
+		std::function<void(Framebuffer* previous)> DrawCallback = nullptr;
 		bool ResizeWithScreen = true;
 	};
 
-	class RenderPipeline
+	class ENGINE_API RenderPipeline
 	{
 	protected:
 		Shader* m_CurrentShader = nullptr;

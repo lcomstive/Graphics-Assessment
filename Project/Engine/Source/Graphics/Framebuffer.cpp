@@ -12,8 +12,6 @@ Framebuffer::Framebuffer(FramebufferSpec& specs) : m_Specs(specs), m_ID(GL_INVAL
 {
 	if (m_Specs.SwapchainTarget)
 		m_ID = 0;
-
-	Create();
 }
 
 Framebuffer::~Framebuffer() { Destroy(); }
@@ -39,10 +37,13 @@ void Framebuffer::Destroy()
 void Framebuffer::Create()
 {
 	if (m_Specs.SwapchainTarget)
+	{
+		m_ID = 0;
 		return;
+	}
 
 	glGenFramebuffers(1, &m_ID);
-	Bind();
+	glBindFramebuffer(GL_FRAMEBUFFER, m_ID);
 
 	for (unsigned int i = 0; i < m_Specs.Attachments.size(); i++)
 	{
@@ -101,7 +102,7 @@ void Framebuffer::Create()
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		Log::Error("Failed to create framebuffer");
 
-	Unbind();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Framebuffer::Recreate()
@@ -109,8 +110,8 @@ void Framebuffer::Recreate()
 	if (m_Specs.SwapchainTarget)
 		return;
 
-	if(m_ID == GL_INVALID_VALUE)
-		glGenFramebuffers(1, &m_ID);
+	if (m_ID == GL_INVALID_VALUE)
+		Create();
 
 	Bind();
 
@@ -172,6 +173,9 @@ void Framebuffer::CopyAttachmentTo(RenderTexture* destination, unsigned int colo
 
 void Framebuffer::Bind()
 {
+	if (m_ID == GL_INVALID_VALUE)
+		Create();
+
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ID);
 	glViewport(0, 0, m_Specs.Resolution.x, m_Specs.Resolution.y);
 }

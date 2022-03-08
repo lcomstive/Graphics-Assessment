@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Components/Physics/Collider.hpp>
 
 namespace Engine::Components
@@ -11,22 +12,22 @@ namespace Engine::Components
 		glm::vec3 Offset = { 0, 0, 0 };
 		
 		glm::vec3& GetExtents();
-		void SetExtents(glm::vec3 value);
+		ENGINE_API void SetExtents(glm::vec3 value);
 
 		Physics::OBB& GetOBB();
 
-		void DrawGizmos() override;
+		ENGINE_API void DrawGizmos() override;
 
-		Physics::OBB& GetBounds() override;
-		bool LineTest(Physics::Line& line) override;
-		bool IsPointInside(glm::vec3& point) const override;
-		bool Raycast(Physics::Ray& ray, Physics::RaycastHit* outResult) override;
-		glm::mat4& InverseTensor() override;
+		ENGINE_API Physics::OBB& GetBounds() override;
+		ENGINE_API bool LineTest(Physics::Line& line) override;
+		ENGINE_API bool IsPointInside(glm::vec3& point) const override;
+		ENGINE_API bool Raycast(Physics::Ray& ray, Physics::RaycastHit* outResult) override;
+		ENGINE_API glm::mat4& InverseTensor() override;
 
-		bool CheckCollision(Collider* other) override;
-		bool CheckCollision(BoxCollider* other) override;
-		bool CheckCollision(PlaneCollider* other) override;
-		bool CheckCollision(SphereCollider* other) override;
+		ENGINE_API bool CheckCollision(Collider* other) override;
+		ENGINE_API bool CheckCollision(BoxCollider* other) override;
+		ENGINE_API bool CheckCollision(PlaneCollider* other) override;
+		ENGINE_API bool CheckCollision(SphereCollider* other) override;
 
 	private:
 		Physics::OBB m_Bounds;

@@ -1,11 +1,12 @@
 #pragma once
 #include <vector>
+#include <Engine/Api.hpp>
 #include <Engine/Physics/Shapes.hpp>
 #include <Engine/Components/Physics/Collider.hpp>
 
 namespace Engine::Physics
 {
-	struct OctreeNode
+	struct ENGINE_API OctreeNode
 	{
 		AABB Bounds;
 		OctreeNode* Children;

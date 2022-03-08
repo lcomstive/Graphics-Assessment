@@ -1,7 +1,9 @@
 project "ImGUI"
 	language "C++"
-	kind "StaticLib"
+	kind(DependencyType)
+
 	cppdialect "C++17"
+	staticruntime "Off"
 
 	targetdir ("%{OutputDir}%{prj.name}")
 	objdir ("%{OutputDir}Intermediate/%{prj.name}")
@@ -21,6 +23,14 @@ project "ImGUI"
 		"%{DependencyDir}imgui",
 		"%{DependencyDir}glfw/include"
 	}
+
+	filter "kind:SharedLib"
+		links { "GLFW" }
+
+	filter { "kind:SharedLib", "system:windows"}
+		defines { "IMGUI_API=__declspec(dllexport)" }
+	filter { "kind:SharedLib", "not system:windows"}
+		defines { "IMGUI_API=__attribute__((visibility(\"default\")))" }
 
 	filter "system:windows"
 		systemversion "latest" -- Windows SDK

@@ -237,7 +237,8 @@ ResourceID& Mesh::Cube()
 	if (cubeMeshID != InvalidResourceID)
 		return cubeMeshID;
 
-	Model* model = ResourceManager::LoadNamed<Model>("PrimitiveCube", Application::AssetDir + "Models/Primitives/Cube.fbx");
+	ResourceID modelID = ResourceManager::LoadNamed<Model>("PrimitiveCube", Application::AssetDir + "Models/Primitives/Cube.fbx");
+	Model* model = ResourceManager::Get<Model>(modelID);
 	return (cubeMeshID = model->GetMeshes()[0]);
 }
 
@@ -247,6 +248,7 @@ ResourceID& Mesh::Sphere()
 	if (sphereMeshID != InvalidResourceID)
 		return sphereMeshID;
 
-	Model* model = ResourceManager::LoadNamed<Model>("PrimitiveSphere", Application::AssetDir + "Models/Primitives/Sphere.fbx");
+	ResourceID modelID = ResourceManager::LoadNamed<Model>("PrimitiveSphere", Application::AssetDir + "Models/Primitives/Sphere.fbx");
+	Model* model = ResourceManager::Get<Model>(modelID);
 	return (sphereMeshID = model->GetMeshes()[0]);
 }

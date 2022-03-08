@@ -24,7 +24,8 @@ Renderer::Renderer() :
 	m_VSync(false),
 	m_Resolution(0),
 	m_Wireframe(false),
-	m_Pipeline(nullptr)
+	m_Pipeline(nullptr),
+	m_MainCamera(nullptr)
 {
 	if (!s_Instance)
 		s_Instance = this;
@@ -46,7 +47,9 @@ uint32_t Renderer::GetSamples() { return s_Instance->m_Samples; }
 float Renderer::GetDeltaTime() { return s_Instance->m_DeltaTime; }
 ivec2 Renderer::GetResolution() { return s_Instance->m_Resolution; }
 bool Renderer::GetWireframeMode() { return s_Instance->m_Wireframe; }
+Camera* Renderer::GetMainCamera() { return s_Instance->m_MainCamera; }
 RenderPipeline* Renderer::GetPipeline() { return s_Instance->m_Pipeline; }
+void Renderer::SetMainCamera(Camera* camera) { s_Instance->m_MainCamera = camera; }
 
 void Renderer::Shutdown()
 {
@@ -57,9 +60,8 @@ void Renderer::Shutdown()
 
 void Renderer::SortDrawQueue(DrawSortType sortType)
 {
-	Camera* camera = Camera::GetMainCamera();
-	vec3 cameraPos = camera->GetTransform()->GetGlobalPosition();
-	if (sortType == DrawSortType::None || !camera)
+	vec3 cameraPos = s_Instance->m_MainCamera->GetTransform()->GetGlobalPosition();
+	if (sortType == DrawSortType::None || !s_Instance->m_MainCamera)
 		return;
 
 	sort(s_Instance->m_DrawQueue.begin(), s_Instance->m_DrawQueue.end(), [=](DrawCall& a, DrawCall& b)
@@ -75,7 +77,7 @@ void Renderer::Draw(DrawArgs args)
 	SortDrawQueue(args.DrawSorting);
 	Shader* shader = s_Instance->m_Pipeline->CurrentShader();
 
-	for (const DrawCall& drawCall : s_Instance->m_DrawQueue)
+	for (DrawCall& drawCall : s_Instance->m_DrawQueue)
 	{
 		if (drawCall.Mesh == InvalidResourceID)
 			continue;

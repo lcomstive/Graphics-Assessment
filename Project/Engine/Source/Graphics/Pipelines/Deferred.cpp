@@ -39,7 +39,6 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 
 	RenderPipelinePass pass = { meshShader , m_MeshPass };
 	pass.DrawCallback = std::bind(&DeferredRenderPipeline::MeshPass, this, ::placeholders::_1);
-
 	AddPass(pass);
 
 	// Lighting Pass //
@@ -50,7 +49,6 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	};
 	m_LightingPass = new Framebuffer(framebufferSpecs);
 	pass.Pass = m_LightingPass;
-
 	pass.DrawCallback = bind(&DeferredRenderPipeline::LightingPass, this, ::placeholders::_1);
 
 	pass.Shader = new Shader(
@@ -69,7 +67,6 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	};
 	m_ForwardPass = new Framebuffer(framebufferSpecs);
 	pass.Pass = m_ForwardPass;
-
 	pass.DrawCallback = bind(&DeferredRenderPipeline::ForwardPass, this, ::placeholders::_1);
 
 	pass.Shader = new Shader(
@@ -111,7 +108,6 @@ void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Shader* shader = CurrentShader();
-
 	// FILL G-BUFFER MAPS //
 	// Position
 	m_MeshPass->GetColourAttachment()->Bind();

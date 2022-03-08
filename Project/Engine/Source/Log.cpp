@@ -7,11 +7,11 @@ using namespace Engine;
 
 int Log::s_LogLevel = (int)Log::LogLevel::Info |
 #ifndef NDEBUG // only add debug loglevel if NOT in release mode
-(int)Log::LogLevel::Debug |
+						(int)Log::LogLevel::Debug |
 #endif
-(int)Log::LogLevel::Warning |
-(int)Log::LogLevel::Error |
-(int)Log::LogLevel::Exception;
+						(int)Log::LogLevel::Warning |
+						(int)Log::LogLevel::Error |
+						(int)Log::LogLevel::Exception;
 
 void Log::Debug(const char* msg)
 {
@@ -69,6 +69,7 @@ void Log::Assert(bool value, const char* msg)
 void Log::Assert(bool value, string msg) { Log::Assert(value, msg.c_str()); }
 
 void Log::SetLogLevel(int level) { s_LogLevel = level; }
+void Log::SetLogLevel(LogLevel level) { s_LogLevel = (int)level; }
 int Log::GetLogLevel() { return s_LogLevel; }
 
 void Log::AddLogLevel(LogLevel level) { s_LogLevel |= (int)level; }

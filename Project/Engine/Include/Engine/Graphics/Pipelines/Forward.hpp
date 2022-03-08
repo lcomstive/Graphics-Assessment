@@ -1,3 +1,4 @@
+#include <Engine/Api.hpp>
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
 
@@ -10,7 +11,7 @@ namespace Engine::Graphics::Pipelines
 		void ForwardPass(Framebuffer* previous);
 		
 	public:
-		ForwardRenderPipeline();
-		~ForwardRenderPipeline();
+		ENGINE_API ForwardRenderPipeline();
+		ENGINE_API ~ForwardRenderPipeline();
 	};
 }

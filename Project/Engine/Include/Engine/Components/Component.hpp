@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine/Api.hpp>
 
 namespace Engine
 {
@@ -23,34 +24,35 @@ namespace Engine
 			/// <summary>
 			/// Component has been added and initialised
 			/// </summary>
-			virtual void Added() { }
+			ENGINE_API virtual void Added() { }
 
 			/// <summary>
 			/// Component is about to be removed from object
 			/// </summary>
-			virtual void Removed();
+			ENGINE_API virtual void Removed();
 
-			virtual void Draw() { }
-			virtual void DrawGizmos() { }
-			virtual void Update(float deltaTime) { }
+			ENGINE_API virtual void Draw() { }
+			ENGINE_API virtual void DrawGizmos() { }
+			ENGINE_API virtual void Update(float deltaTime) { }
 
 		public:
-			Rigidbody* GetRigidbody();
-			Transform* GetTransform();
-			GameObject* GetGameObject() const;
+			ENGINE_API Rigidbody* GetRigidbody();
+			ENGINE_API Transform* GetTransform();
+			ENGINE_API GameObject* GetGameObject() const;
 		};
 
 		class PhysicsComponent : public Component
 		{
 		protected:
-			virtual void Added() override;
-			virtual void Removed() override;
+			ENGINE_API virtual void Added() override;
+			ENGINE_API virtual void Removed() override;
 
-			virtual void FixedUpdate(float timestep) { }
-			virtual void ApplyForces(float timestep) { }
-			virtual void ApplyWorldForces(float timestep) { }
-			virtual void SolveConstraints(float timestep) { }
+			ENGINE_API virtual void FixedUpdate(float timestep) { }
+			ENGINE_API virtual void ApplyForces(float timestep) { }
+			ENGINE_API virtual void ApplyWorldForces(float timestep) { }
+			ENGINE_API virtual void SolveConstraints(float timestep) { }
 
+		private:
 			friend class Engine::Physics::PhysicsSystem;
 		};
 	}

@@ -1,5 +1,5 @@
 project "GLFW"
-	kind "StaticLib"
+	kind(DependencyType)
 	language "C"
 	staticruntime "Off"
 
@@ -33,7 +33,9 @@ project "GLFW"
 	}
 
 	systemversion "latest"
-	staticruntime "On"
+
+	filter "kind:SharedLib"
+		defines { "_GLFW_BUILD_DLL" }
 
 	filter "system:windows"		
 		files

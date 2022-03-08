@@ -14,7 +14,13 @@ void main()
 	// Albedo
 	gAlbedo = material.AlbedoColour.rgb;
 	if(material.HasAlbedoMap)
-		gAlbedo = texture(material.AlbedoMap, TexCoords).rgb;
+	{
+		vec4 albedoTexture = texture(material.AlbedoMap, TexCoords);
+		gAlbedo = albedoTexture.rgb;
+
+		if(material.AlphaClipping && albedoTexture.a < material.AlphaClipThreshold)
+			discard;
+	}
 
 	// Position
 	gPositionRoughness.rgb = WorldPos;

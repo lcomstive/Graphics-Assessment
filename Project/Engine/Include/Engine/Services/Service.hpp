@@ -6,7 +6,7 @@ namespace Engine { class Application; } // Forward declaration
 
 namespace Engine::Services
 {
-	struct Service
+	struct ENGINE_API Service
 	{
 		virtual ~Service() { }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma warning(disable : 4251) // 'Engine::*': struct 'glm::vec<*>' needs to have dll-interface to be used by clients of struct 'Engine::*'
+
 #if BUILD_SHARED_LIB
 	#if defined(_MSC_VER)
 		#define ENGINE_EXPORT __declspec(dllexport)
@@ -12,13 +14,25 @@
 		#define ENGINE_IMPORT
 		#error Unknown dynamic link environment
 	#endif
+	#if ENGINE_EXPORT_DLL
+		#define ENGINE_API ENGINE_EXPORT
+	#else
+		#define ENGINE_API ENGINE_IMPORT
+	#endif
 #else
 	#define ENGINE_EXPORT
 	#define ENGINE_IMPORT
+	#define ENGINE_API
 #endif
 
-#if EXPORT_DLL
-	#define ENGINE_API ENGINE_EXPORT
+#if BUILD_SERVICE_DLL
+	#if _WIN32
+		#define SERVICE_API __declspec(dllexport)
+	#else
+		#define SERVICE_API __attribute__((visibility("default")))
+	#endif
+#elif _WIN32
+	#define SERVICE_API __declspec(dllimport)
 #else
-	#define ENGINE_API ENGINE_IMPORT
+	#define SERVICE_API
 #endif

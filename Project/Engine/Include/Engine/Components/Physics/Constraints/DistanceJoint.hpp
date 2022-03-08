@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Components/Component.hpp>
 #include <Engine/Components/Physics/Particle.hpp>
 
@@ -11,13 +12,13 @@ namespace Engine::Components
 		Particle* m_Body2 = nullptr;
 		float m_Length = 1.0f;
 
-		virtual void DrawGizmos() override;
-		virtual void SolveConstraints(float timestep) override;
+		ENGINE_API virtual void DrawGizmos() override;
+		ENGINE_API virtual void SolveConstraints(float timestep) override;
 
 	public:
-		void Initialise(Particle* a, Particle* b, float length);
+		ENGINE_API void Initialise(Particle* a, Particle* b, float length);
 
-		float GetLength();
-		void SetLength(float length);
+		ENGINE_API float GetLength();
+		ENGINE_API void SetLength(float length);
 	};
 }

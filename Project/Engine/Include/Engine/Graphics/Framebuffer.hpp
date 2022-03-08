@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
+#include <Engine/Api.hpp>
 #include <Engine/Graphics/Shader.hpp>
 #include <Engine/Graphics/RenderTexture.hpp>
 
 namespace Engine::Graphics
 {
-	struct FramebufferAttachment
+	struct ENGINE_API FramebufferAttachment
 	{
 		TextureFormat Format = TextureFormat::RGBA8;
 		TexturePixelType PixelType = TexturePixelType::UnsignedByte;
@@ -15,7 +16,7 @@ namespace Engine::Graphics
 		FramebufferAttachment(TextureFormat format, TexturePixelType pixelType = TexturePixelType::UnsignedByte) : Format(format), PixelType(pixelType) { }
 	};
 
-	struct FramebufferSpec
+	struct ENGINE_API FramebufferSpec
 	{
 		glm::ivec2 Resolution = { 0, 0 };
 
@@ -45,30 +46,30 @@ namespace Engine::Graphics
 		void Recreate(); // Usually called when resized or samples change, attachment count & formats remain constant
 
 	public:
-		Framebuffer(FramebufferSpec& specs);
-		~Framebuffer();
+		ENGINE_API Framebuffer(FramebufferSpec& specs);
+		ENGINE_API ~Framebuffer();
 
-		void Bind();
-		void Unbind();
+		ENGINE_API void Bind();
+		ENGINE_API void Unbind();
 
-		void SetSamples(unsigned int samples);
-		void SetResolution(glm::ivec2 newResolution);
+		ENGINE_API void SetSamples(unsigned int samples);
+		ENGINE_API void SetResolution(glm::ivec2 newResolution);
 		
-		void CopyAttachmentTo(RenderTexture* destination, unsigned int colourAttachment = 0);
-		void BlitTo(Framebuffer* other = nullptr, GLbitfield bufferFlags = GL_COLOR_BUFFER_BIT, GLenum filter = GL_NEAREST);
+		ENGINE_API void CopyAttachmentTo(RenderTexture* destination, unsigned int colourAttachment = 0);
+		ENGINE_API void BlitTo(Framebuffer* other = nullptr, GLbitfield bufferFlags = GL_COLOR_BUFFER_BIT, GLenum filter = GL_NEAREST);
 
-		unsigned int GetSamples();
-		glm::ivec2 GetResolution();
-		RenderTexture* GetDepthAttachment();
-		RenderTexture* GetColourAttachment(unsigned int index = 0);
-		std::vector<RenderTexture*> GetAttachments();
-		std::vector<RenderTexture*> GetColourAttachments();
+		ENGINE_API unsigned int GetSamples();
+		ENGINE_API glm::ivec2 GetResolution();
+		ENGINE_API RenderTexture* GetDepthAttachment();
+		ENGINE_API RenderTexture* GetColourAttachment(unsigned int index = 0);
+		ENGINE_API std::vector<RenderTexture*> GetAttachments();
+		ENGINE_API std::vector<RenderTexture*> GetColourAttachments();
 
-		unsigned int AttachmentCount();
-		unsigned int ColourAttachmentCount();
+		ENGINE_API unsigned int AttachmentCount();
+		ENGINE_API unsigned int ColourAttachmentCount();
 
-		bool HasDepthAttachment();
+		ENGINE_API bool HasDepthAttachment();
 
-		FramebufferSpec& GetSpecs();
+		ENGINE_API FramebufferSpec& GetSpecs();
 	};
 }

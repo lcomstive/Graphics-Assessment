@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <Engine/Api.hpp>
 #include <Engine/DataStream.hpp>
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/Shader.hpp>
@@ -8,7 +9,7 @@
 
 namespace Engine::Graphics
 {
-	struct Material
+	struct ENGINE_API Material
 	{
 		/// <summary>
 		/// This color is multiplied with other colors, such as the albedoMap or vertex colors.
@@ -21,14 +22,14 @@ namespace Engine::Graphics
 		/// <summary>
 		/// Per-pixel albedo values
 		/// </summary>
-		Texture* AlbedoMap = nullptr;
+		ResourceID AlbedoMap = InvalidResourceID;
 
 		/// <summary>
 		/// When enabled, albedo alpha's under AlphaClipThreshold are discarded.
 		/// 
-		/// Default is disabled.
+		/// Default is enabled.
 		/// </summary>
-		bool AlphaClipping = false;
+		bool AlphaClipping = true;
 
 		/// <summary>
 		/// When AlphaClipping is enabled, alpha values below this threshold are discarded.
@@ -70,29 +71,29 @@ namespace Engine::Graphics
 		/// <summary>
 		/// Simulates extra details on a mesh
 		/// </summary>
-		Texture* NormalMap = nullptr;
+		ResourceID NormalMap = InvalidResourceID;
 
 		/// <summary>
 		/// Simulates metal on a mesh
 		/// </summary>
-		Texture* MetalnessMap = nullptr;
+		ResourceID MetalnessMap = InvalidResourceID;
 
 		/// <summary>
 		/// Simulates roughness on a mesh
 		/// </summary>
-		Texture* RoughnessMap = nullptr;
+		ResourceID RoughnessMap = InvalidResourceID;
 
 		/// <summary>
 		/// Simulates extra shadows on a mesh
 		/// </summary>
-		Texture* AmbientOcclusionMap = nullptr;
+		ResourceID AmbientOcclusionMap = InvalidResourceID;
 
 		bool Wireframe = false;
 
+		void FillShader(Shader* shader);
 		void Serialize(DataStream& stream);
-		void FillShader(Shader* shader) const;
 
 	private:
-		void SerializeTexture(DataStream& stream, Texture*& texture);
+		void SerializeTexture(DataStream& stream, ResourceID& texture);
 	};
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
+#include <Engine/Api.hpp>
 
 namespace Engine::Physics
 {
@@ -8,15 +9,15 @@ namespace Engine::Physics
 	struct Line;
 	struct Plane;
 
-	glm::vec3 project(glm::vec3& length, glm::vec3& direction);
+	ENGINE_API glm::vec3 project(glm::vec3& length, glm::vec3& direction);
 
-	struct Interval
+	struct ENGINE_API Interval
 	{
 		float Min;
 		float Max;
 	};
 
-	struct Line
+	struct ENGINE_API Line
 	{
 		glm::vec3 Start;
 		glm::vec3 End;
@@ -30,7 +31,7 @@ namespace Engine::Physics
 		glm::vec3 GetClosestPoint(glm::vec3& point);
 	};
 
-	struct RaycastHit
+	struct ENGINE_API RaycastHit
 	{
 		glm::vec3 Point	 = { 0, 0, 0 };
 		glm::vec3 Normal = { 0, 0, 1 };
@@ -38,7 +39,7 @@ namespace Engine::Physics
 		bool Hit		 = false;
 	};
 
-	struct Ray
+	struct ENGINE_API Ray
 	{
 		glm::vec3 Origin = { 0, 0, 0 };
 		glm::vec3 Direction = { 0, 0, 1 };
@@ -53,7 +54,7 @@ namespace Engine::Physics
 	/// <summary>
 	/// Axis-Aligned Bounding Box
 	/// </summary>
-	struct AABB
+	struct ENGINE_API AABB
 	{
 		glm::vec3 Position = { 0, 0, 0 };
 		glm::vec3 Extents = { 0.5f, 0.5f, 0.5f };
@@ -78,7 +79,7 @@ namespace Engine::Physics
 	/// <summary>
 	/// Oriented Bounding Box
 	/// </summary>
-	struct OBB
+	struct ENGINE_API OBB
 	{
 		glm::vec3 Position;
 		glm::vec3 Extents; // Size
@@ -115,7 +116,7 @@ namespace Engine::Physics
 		glm::vec3 m_VertexPosition, m_VertexExtents;
 	};
 
-	struct Sphere
+	struct ENGINE_API Sphere
 	{
 		glm::vec3 Position = { 0, 0, 0 };
 		float Radius = 1.0f;
@@ -134,9 +135,9 @@ namespace Engine::Physics
 		bool LineTest(Line& line);
 	};
 
-	enum class PlaneIntersection { None, Behind, InFront, Intersecting };
+	enum class ENGINE_API  PlaneIntersection { None, Behind, InFront, Intersecting };
 
-	struct Triangle
+	struct ENGINE_API Triangle
 	{
 		union
 		{
@@ -174,7 +175,7 @@ namespace Engine::Physics
 		glm::vec3 SatCrossEdge(glm::vec3& a, glm::vec3& b, glm::vec3& c, glm::vec3& d);
 	};
 
-	struct Plane
+	struct ENGINE_API Plane
 	{
 		/// <summary>
 		/// Distance along normal from world origin

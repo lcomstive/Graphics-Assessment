@@ -2,6 +2,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glad/glad.h>
+#include <Engine/Api.hpp>
 #include <Engine/ResourceID.hpp>
 
 namespace Engine { class Application; }
@@ -25,7 +26,7 @@ namespace Engine::Graphics
 			QuadStrip		= GL_QUAD_STRIP
 		};
 
-		struct Vertex
+		struct ENGINE_API Vertex
 		{
 			glm::vec3 Position;
 			glm::vec3 Normal;
@@ -45,20 +46,20 @@ namespace Engine::Graphics
 		void Setup();
 
 	public:
-		Mesh();
-		Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {}, DrawMode drawMode = DrawMode::Triangles);
-		~Mesh();
+		ENGINE_API Mesh();
+		ENGINE_API Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {}, DrawMode drawMode = DrawMode::Triangles);
+		ENGINE_API ~Mesh();
 
-		void Draw();
-		void SetData(std::vector<Vertex>& vertices, std::vector<unsigned int> indices = {});
+		ENGINE_API void Draw();
+		ENGINE_API void SetData(std::vector<Vertex>& vertices, std::vector<unsigned int> indices = {});
 
-		std::vector<Vertex>& GetVertices() { return m_Vertices; }
-		std::vector<unsigned int>& GetIndices() { return m_Indices; }
+		ENGINE_API std::vector<Vertex>& GetVertices() { return m_Vertices; }
+		ENGINE_API std::vector<unsigned int>& GetIndices() { return m_Indices; }
 
-		static ResourceID& Quad();
-		static ResourceID& Cube();
-		static ResourceID& Line();
-		static ResourceID& Sphere();
-		static ResourceID Grid(unsigned int size);
+		ENGINE_API static ResourceID& Quad();
+		ENGINE_API static ResourceID& Cube();
+		ENGINE_API static ResourceID& Line();
+		ENGINE_API static ResourceID& Sphere();
+		ENGINE_API static ResourceID Grid(unsigned int size);
 	};
 }

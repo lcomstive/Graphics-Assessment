@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <Engine/Api.hpp>
 #include <Engine/ResourceID.hpp>
 #include <Engine/Graphics/Mesh.hpp>
 #include <Engine/Graphics/Material.hpp>
@@ -19,18 +20,18 @@ namespace Engine::Components
 		std::vector<Spring*> m_ShearSprings;
 		std::vector<Spring*> m_StructuralSprings;
 
-		virtual void Draw() override;
+		ENGINE_API virtual void Draw() override;
 
 	public:
 		Graphics::Material Material;
 
-		void Initialize(unsigned int size, float spacing);
-		void Clear();
+		ENGINE_API void Initialize(unsigned int size, float spacing);
+		ENGINE_API void Clear();
 
-		void SetBendSprings(float stiffness, float dampening);
-		void SetShearSprings(float stiffness, float dampening);
-		void SetStructuralSprings(float stiffness, float dampening);
+		ENGINE_API void SetBendSprings(float stiffness, float dampening);
+		ENGINE_API void SetShearSprings(float stiffness, float dampening);
+		ENGINE_API void SetStructuralSprings(float stiffness, float dampening);
 
-		void SetParticleMass(float mass);
+		ENGINE_API void SetParticleMass(float mass);
 	};
 }

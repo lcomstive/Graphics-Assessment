@@ -1,5 +1,5 @@
 #pragma once
-#include <Engine/Services/Service.hpp>
+#include <Engine/Services/ExternalService.hpp>
 
 class Demo : public Engine::Services::Service
 {
@@ -13,3 +13,5 @@ protected:
 
 	void ResetScene();
 };
+
+EXTERNAL_SERVICE_ENTRYPOINT(Demo)

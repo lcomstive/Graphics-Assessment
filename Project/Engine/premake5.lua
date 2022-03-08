@@ -1,5 +1,5 @@
 project "Engine"
-	kind "StaticLib"
+	kind(EngineType)
 	language "C++"
 	cppdialect "C++17"
 
@@ -12,7 +12,11 @@ project "Engine"
 		"Source/**.cpp"
 	}
 
-	defines { "_CRT_SECURE_NO_WARNINGS" }
+	defines
+	{
+		EngineDefines,
+		"_CRT_SECURE_NO_WARNINGS"
+	}
 
 	includedirs
 	{
@@ -34,6 +38,10 @@ project "Engine"
 		"Assimp"
 	}
 
+	if DependencyType == 'SharedLib' then
+		defines { "IMGUI_API=__declspec(dllimport)" }
+	end
+
 	filter "system:windows"
 		systemversion "latest" -- Windows SDK Version
 
@@ -46,4 +54,4 @@ project "Engine"
 		optimize "On"
 
 	filter "kind:SharedLib"
-		defines { "BUILD_SHARED_LIB", "EXPORT_DLL" }
+		defines { "BUILD_SHARED_LIB", "ENGINE_EXPORT_DLL" }

@@ -3,6 +3,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <Engine/Log.hpp>
+#include <Engine/Api.hpp>
 #include <Engine/Components/Component.hpp>
 #include <Engine/Components/Transform.hpp>
 
@@ -17,26 +18,26 @@ namespace Engine
 		std::unordered_map<std::type_index, Components::Component*> m_Components;
 
 	public:
-		GameObject(std::string name = "GameObject");
-		GameObject(Scene* scene, std::string name = "GameObject");
-		GameObject(GameObject* parent, std::string name = "GameObject");
-		GameObject(Engine::Components::Transform* parent, std::string name = "GameObject");
-		~GameObject();
+		ENGINE_API GameObject(std::string name = "GameObject");
+		ENGINE_API GameObject(Scene* scene, std::string name = "GameObject");
+		ENGINE_API GameObject(GameObject* parent, std::string name = "GameObject");
+		ENGINE_API GameObject(Engine::Components::Transform* parent, std::string name = "GameObject");
+		ENGINE_API ~GameObject();
 
-		void Draw();
-		void DrawGizmos();
-		void Update(float deltaTime);
+		ENGINE_API void Draw();
+		ENGINE_API void DrawGizmos();
+		ENGINE_API void Update(float deltaTime);
 
-		Scene* GetScene();
-		std::string GetName();
-		void SetName(std::string name);
-		Components::Transform* GetTransform();
+		ENGINE_API Scene* GetScene();
+		ENGINE_API std::string GetName();
+		ENGINE_API void SetName(std::string name);
+		ENGINE_API Components::Transform* GetTransform();
 
 		/// <summary>
 		/// Attaches a component onto a GameObject, or returns existing one if found
 		/// </summary>
 		template<typename T>
-		T* AddComponent()
+		ENGINE_EXPORT T* AddComponent()
 		{
 			Log::Assert(std::is_base_of<Components::Component, T>(), "Added components need to derive from Engine::Components::Component");
 
@@ -56,7 +57,7 @@ namespace Engine
 		}
 
 		template<typename T>
-		void RemoveComponent()
+		ENGINE_EXPORT void RemoveComponent()
 		{
 			Log::Assert(std::is_base_of<Components::Component, T>(), "Removed components need to derive from Engine::Components::Component");
 			std::type_index type = typeid(T);
@@ -77,7 +78,7 @@ namespace Engine
 		/// <typeparam name="T">Component type, must derive from Engine::Components::Component</typeparam>
 		/// <returns>Component if found, otherwise nullptr</returns>
 		template<typename T>
-		T* GetComponent(bool checkInheritedClasses = false)
+		ENGINE_EXPORT T* GetComponent(bool checkInheritedClasses = false)
 		{
 			Log::Assert(std::is_base_of<Components::Component, T>(), "Tried getting component that did not derive from Engine::Components::Component");
 
@@ -104,7 +105,7 @@ namespace Engine
 		/// </summary>
 		/// <typeparam name="T">Component type, must derive from Engine::Components::Component</typeparam>
 		template<typename T>
-		std::vector<T*> GetComponents(bool checkInheritedClasses = false)
+		ENGINE_EXPORT std::vector<T*> GetComponents(bool checkInheritedClasses = false)
 		{
 			Log::Assert(std::is_base_of<Components::Component, T>(), "Tried getting component that did not derive from Engine::Components::Component");
 
@@ -126,7 +127,7 @@ namespace Engine
 		/// <typeparam name="T">Component type, must derive from Engine::Components::Component</typeparam>
 		/// <returns>Component if found, otherwise nullptr</returns>
 		template<typename T>
-		T* GetComponentInChildren(bool checkInheritedClasses = false)
+		ENGINE_EXPORT T* GetComponentInChildren(bool checkInheritedClasses = false)
 		{
 			Log::Assert(std::is_base_of<Components::Component, T>(), "Tried getting component that did not derive from Engine::Components::Component");
 
@@ -147,7 +148,7 @@ namespace Engine
 		/// </summary>
 		/// <typeparam name="T">Component type, must derive from Engine::Components::Component</typeparam>
 		template<typename T>
-		std::vector<T*> GetComponentsInChildren(bool checkInheritedClasses = false)
+		ENGINE_EXPORT std::vector<T*> GetComponentsInChildren(bool checkInheritedClasses = false)
 		{
 			std::vector<T*> components = {};
 			GetComponentsInChildren(components, checkInheritedClasses);
@@ -155,7 +156,7 @@ namespace Engine
 		}
 
 		template<typename T>
-		void GetComponentsInChildren(std::vector<T*>& output, bool checkInheritedClasses = false)
+		ENGINE_EXPORT void GetComponentsInChildren(std::vector<T*>& output, bool checkInheritedClasses = false)
 		{
 			Log::Assert(std::is_base_of<Components::Component, T>(), "Tried getting component that did not derive from Engine::Components::Component");
 
@@ -168,7 +169,7 @@ namespace Engine
 		}
 
 		template<typename T>
-		bool HasComponent(bool checkInheritedClasses = false)
+		ENGINE_EXPORT bool HasComponent(bool checkInheritedClasses = false)
 		{
 			if (!std::is_base_of<Components::Component, T>())
 			{

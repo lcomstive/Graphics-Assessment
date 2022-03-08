@@ -1,9 +1,15 @@
 #pragma once
+#include <queue>
 #include <string>
 #include <imgui.h>
 #include <unordered_map>
 #include <Engine/Api.hpp>
+#include <Engine/Application.hpp>
 #include <Engine/Services/Service.hpp>
+
+#ifndef NDEBUG
+#include <Engine/FileWatcher.hpp>
+#endif
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -12,7 +18,7 @@
 // Unix shared library loading library thingo
 #endif
 
-#define EXTERNAL_SERVICE_ENTRYPOINT(className) extern "C" ENGINE_EXPORT Engine::Services::Service* CreateExternalService(Engine::Application* app) { \
+#define EXTERNAL_SERVICE_ENTRYPOINT(className) extern "C" SERVICE_API Engine::Services::Service* CreateExternalService(Engine::Application* app) { \
 		app->UpdateGlobals(); \
 		return new className(); }
 
@@ -20,19 +26,21 @@ namespace Engine::Services
 {
 	struct ExternalServices : Service
 	{
-		virtual void OnStart() override;
-		virtual void OnShutdown() override;
+		ENGINE_API virtual void OnStart() override;
+		ENGINE_API virtual void OnShutdown() override;
 
-		virtual void OnDraw() override;
-		virtual void OnUpdate(float deltaTime) override;
-		virtual void OnDrawGizmos() override;
+		ENGINE_API virtual void OnDraw() override;
+		ENGINE_API virtual void OnUpdate(float deltaTime) override;
+		ENGINE_API virtual void OnDrawGizmos() override;
 
-		virtual void OnResized(glm::ivec2 resolution) override;
+		ENGINE_API virtual void OnResized(glm::ivec2 resolution) override;
 
-		Service* Add(std::string path);
-		void Remove(std::string path);
-		Service* Get(std::string path);
-		Service* Reload(std::string path);
+		ENGINE_API Service* Add(std::string path);
+		ENGINE_API void Remove(std::string path);
+		ENGINE_API Service* Get(std::string path);
+		ENGINE_API Service* Reload(std::string path);
+
+		ENGINE_API void RemoveAll();
 
 	private:
 		struct ServiceInstance
@@ -45,8 +53,30 @@ namespace Engine::Services
 #else
 			void* NativeHandle = nullptr;
 #endif
+
+#ifndef NDEBUG
+			std::string OriginalPath = "";
+			FileWatcher* FileWatcher = nullptr;
+#endif
 		};
 
 		std::unordered_map<std::string, ServiceInstance> m_Instances;
+
+		/// <summary>
+		/// Loads shared library from file
+		/// </summary>
+		/// <param name="instance"></param>
+		/// <returns>Newly created instance, or nullptr if failure</returns>
+		Service* Load(ServiceInstance& instance);
+
+		/// <summary>
+		/// Release resources of shared library
+		/// </summary>
+		/// <param name="instance"></param>
+		void Unload(ServiceInstance& instance);
+
+#ifndef NDEBUG
+		std::queue<std::pair<std::string, FileWatchStatus>> m_FileModifications; // Queue of file that have been changed in the filewatcher thread
+#endif
 	};
 }

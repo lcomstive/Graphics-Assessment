@@ -5,6 +5,7 @@ struct Light
 	vec3 Position;
 	vec3 Colour;
 	float Radius;
+	float Intensity;
 };
 
 struct DirectionalLight
@@ -34,7 +35,7 @@ vec3 BlinnPhong(vec3 albedo, vec3 fragPosition, vec3 normals)
 
 		vec3 diffuse = max(dot(normals, lightDir), 0.0) * albedo;
 
-		lighting += (diffuse + spec) * lights[i].Colour;
+		lighting += (diffuse + spec) * lights[i].Colour * lights[i].Intensity;
 	}
 
 	return lighting;

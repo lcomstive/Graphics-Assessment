@@ -1,3 +1,4 @@
+#include <Engine/Api.hpp>
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
 
@@ -12,7 +13,7 @@ namespace Engine::Graphics::Pipelines
 		void LightingPass(Framebuffer* previous);
 
 	public:
-		DeferredRenderPipeline();
-		~DeferredRenderPipeline();
+		ENGINE_API DeferredRenderPipeline();
+		ENGINE_API ~DeferredRenderPipeline();
 	};
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Log.hpp>
 #include <Engine/Components/Component.hpp>
 #include <Engine/Physics/PhysicsSystem.hpp>
@@ -12,35 +13,35 @@ namespace Engine::Components
 		bool UseGravity = true;
 		bool IsTrigger = false;
 
-		Particle();
+		ENGINE_API Particle();
 
-		Physics::PhysicsSystem& GetSystem();
+		ENGINE_API Physics::PhysicsSystem& GetSystem();
 
-		void ApplyForce(glm::vec3 force, ForceMode mode = ForceMode::Acceleration);
+		ENGINE_API void ApplyForce(glm::vec3 force, ForceMode mode = ForceMode::Acceleration);
 
-		float GetMass();
-		void  SetMass(float value);
+		ENGINE_API float GetMass();
+		ENGINE_API void  SetMass(float value);
 
-		float GetFriction();
-		void  SetFriction(float value);
+		ENGINE_API float GetFriction();
+		ENGINE_API void  SetFriction(float value);
 
-		bool IsStatic();
-		void SetStatic(bool value);
+		ENGINE_API bool IsStatic();
+		ENGINE_API void SetStatic(bool value);
 
-		glm::vec3 GetVelocity();
+		ENGINE_API glm::vec3 GetVelocity();
 
-		float GetRestitution();
-		void  SetRestitution(float value);
+		ENGINE_API float GetRestitution();
+		ENGINE_API void  SetRestitution(float value);
 
-		void SetCollisionRadius(float radius);
+		ENGINE_API void SetCollisionRadius(float radius);
 
-		float InverseMass();
+		ENGINE_API float InverseMass();
 
-		void SolveConstraints(float timestep) override;
+		ENGINE_API void SolveConstraints(float timestep) override;
 
 	protected:
-		void Added() override;
-		void FixedUpdate(float timestep) override;
+		ENGINE_API void Added() override;
+		ENGINE_API void FixedUpdate(float timestep) override;
 
 	private:
 		float m_Radius;

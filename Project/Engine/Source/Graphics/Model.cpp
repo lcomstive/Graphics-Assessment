@@ -20,7 +20,7 @@ using namespace Engine::Components;
 
 namespace fs = std::filesystem;
 
-#define ENABLE_CACHING 0
+#define ENABLE_CACHING 1
 
 Model::Model() : m_Path(""), m_Root(), m_Meshes() { }
 Model::Model(string path) : m_Path(path), m_Root(), m_Meshes() { Load(); }
@@ -99,6 +99,7 @@ void Model::Load()
 		return;
 	}
 #endif
+	Log::Info("Loading model " + m_Path);
 
 	Importer importer;
 
@@ -133,13 +134,13 @@ void LoadMaterialTextures(
 	string currentDirectory,
 	aiTextureType textureType,
 	aiMaterial* aiMat,
-	Texture** materialTexture)
+	ResourceID& materialTexture) // TODO: CHECK THIS REFERENCE
 {
 	int textureCount = aiMat->GetTextureCount(textureType);
 
 	if (aiMat->GetTextureCount(textureType) <= 0)
 	{
-		materialTexture = nullptr;
+		materialTexture = InvalidResourceID;
 		return;
 	}
 
@@ -149,7 +150,7 @@ void LoadMaterialTextures(
 	string texturePath = currentDirectory + aiTexturePath.C_Str();
 	replace(texturePath.begin(), texturePath.end(), '\\', '/');
 
-	*materialTexture = new Texture(texturePath);
+	materialTexture = ResourceManager::LoadNamed<Texture>(aiTexturePath.C_Str(), texturePath);
 }
 
 
@@ -161,14 +162,14 @@ Material Model::CreateMaterial(aiMaterial* aiMat)
 	Material material;
 
 	// Albedo / Base Colour
-	LoadMaterialTextures(currentDirectory, aiTextureType_DIFFUSE, aiMat, &material.AlbedoMap);
-	if (material.AlbedoMap == nullptr)
-		LoadMaterialTextures(currentDirectory, aiTextureType_BASE_COLOR, aiMat, &material.AlbedoMap);
+	LoadMaterialTextures(currentDirectory, aiTextureType_DIFFUSE, aiMat, material.AlbedoMap);
+	if (material.AlbedoMap == InvalidResourceID)
+		LoadMaterialTextures(currentDirectory, aiTextureType_BASE_COLOR, aiMat, material.AlbedoMap);
 
-	LoadMaterialTextures(currentDirectory, aiTextureType_NORMALS, aiMat, &material.NormalMap);
-	LoadMaterialTextures(currentDirectory, aiTextureType_METALNESS, aiMat, &material.MetalnessMap);
-	LoadMaterialTextures(currentDirectory, aiTextureType_DIFFUSE_ROUGHNESS, aiMat, &material.RoughnessMap);
-	LoadMaterialTextures(currentDirectory, aiTextureType_AMBIENT_OCCLUSION, aiMat, &material.AmbientOcclusionMap);
+	LoadMaterialTextures(currentDirectory, aiTextureType_NORMALS, aiMat, material.NormalMap);
+	LoadMaterialTextures(currentDirectory, aiTextureType_METALNESS, aiMat, material.MetalnessMap);
+	LoadMaterialTextures(currentDirectory, aiTextureType_DIFFUSE_ROUGHNESS, aiMat, material.RoughnessMap);
+	LoadMaterialTextures(currentDirectory, aiTextureType_AMBIENT_OCCLUSION, aiMat, material.AmbientOcclusionMap);
 
 	return material;
 }
@@ -287,8 +288,6 @@ void Model::Serialize(DataStream& stream)
 
 	for (unsigned int i = 0; i < meshCount; i++)
 	{
-		// Mesh*& mesh = m_Meshes[i];
-
 		Mesh* mesh = nullptr;
 		if (stream.IsWriting())
 			mesh = ResourceManager::Get<Mesh>(m_Meshes[i]);

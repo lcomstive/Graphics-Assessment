@@ -1,10 +1,11 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glad/glad.h>
+#include <Engine/Api.hpp>
 
 namespace Engine::Graphics
 {
-	enum class TextureFormat
+	enum class ENGINE_API TextureFormat
 	{
 		None = 0,
 
@@ -24,7 +25,7 @@ namespace Engine::Graphics
 		Depth = Depth24Stencil8
 	};
 
-	enum class TexturePixelType
+	enum class ENGINE_API TexturePixelType
 	{
 		Byte			= GL_BYTE,
 		Short			= GL_SHORT,
@@ -35,10 +36,10 @@ namespace Engine::Graphics
 		UnsignedInt		= GL_UNSIGNED_INT
 	};
 
-	bool IsDepthFormat(TextureFormat format);
-	unsigned int GetTextureTarget(TextureFormat format, bool multisampled = false);
-	unsigned int TextureFormatToGLFormat(TextureFormat format);
-	unsigned int TextureFormatToInternalGLFormat(TextureFormat format);
+	ENGINE_API bool IsDepthFormat(TextureFormat format);
+	ENGINE_API unsigned int GetTextureTarget(TextureFormat format, bool multisampled = false);
+	ENGINE_API unsigned int TextureFormatToGLFormat(TextureFormat format);
+	ENGINE_API unsigned int TextureFormatToInternalGLFormat(TextureFormat format);
 
 	class RenderTexture
 	{
@@ -53,28 +54,28 @@ namespace Engine::Graphics
 		void CreateColourTexture();
 
 	public:
-		RenderTexture(
+		ENGINE_API RenderTexture(
 			glm::ivec2 resolution,
 			TextureFormat format = TextureFormat::RGBA8,
 			unsigned int samples = 1,
 			TexturePixelType pixelType = TexturePixelType::UnsignedByte
 			);
-		~RenderTexture();
+		ENGINE_API ~RenderTexture();
 
-		unsigned int GetID();
+		ENGINE_API unsigned int GetID();
 
-		void Bind(unsigned int textureIndex = 0);
-		void Unbind();
+		ENGINE_API void Bind(unsigned int textureIndex = 0);
+		ENGINE_API void Unbind();
 
-		void CopyTo(RenderTexture* destination);
+		ENGINE_API void CopyTo(RenderTexture* destination);
 
-		unsigned int GetSamples();
-		void SetSamples(unsigned int samples);
+		ENGINE_API unsigned int GetSamples();
+		ENGINE_API void SetSamples(unsigned int samples);
 
-		TextureFormat GetFormat();
-		void SetFormat(TextureFormat format);
+		ENGINE_API TextureFormat GetFormat();
+		ENGINE_API void SetFormat(TextureFormat format);
 
-		glm::ivec2 GetResolution();
-		void SetResolution(glm::ivec2 newResolution);
+		ENGINE_API glm::ivec2 GetResolution();
+		ENGINE_API void SetResolution(glm::ivec2 newResolution);
 	};
 }

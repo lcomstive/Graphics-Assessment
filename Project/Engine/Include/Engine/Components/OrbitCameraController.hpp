@@ -8,8 +8,9 @@ namespace Engine::Components
 	{
 		Camera* m_Camera = nullptr;
 
-		void Added() override;
-		void Update(float deltaTime) override;
+	protected:
+		virtual ENGINE_API void Added() override;
+		virtual ENGINE_API void Update(float deltaTime) override;
 
 	public:
 		float MoveSpeed = 5.0f;

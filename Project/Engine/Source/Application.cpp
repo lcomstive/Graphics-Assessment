@@ -11,6 +11,7 @@
 
 #include <imgui.h>
 #include <glad/glad.h>
+// #include <GLFW/../../src/internal.h> // To access GLFW global state
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -29,9 +30,9 @@ using namespace Engine::Components;
 Application* Application::s_Instance = nullptr;
 
 #ifdef NDEBUG // Release
-const std::string Application::AssetDir = "./Assets/";
+ENGINE_API const std::string Application::AssetDir = "./Assets/";
 #else		  // Debug
-const std::string Application::AssetDir = "../../../Applications/Assets/";
+ENGINE_API const std::string Application::AssetDir = "../../../Applications/Assets/";
 #endif
 
 Application::Application(ApplicationArgs args) :
@@ -59,6 +60,7 @@ Application::Application(ApplicationArgs args) :
 
 void Application::Run()
 {
+	Log::SetLogLevel(Log::LogLevel::All);
 	Log::Info("Starting engine..");
 
 	// Create Resource Manager instance
@@ -85,8 +87,7 @@ void Application::Run()
 	SetupGizmos();
 
 	// Load services
-	AddService<SceneService>();
-	AddService<ExternalServices>();
+	InitServices();
 	
 	for (auto& pair : m_Services)
 		pair.second->OnStart();
@@ -99,6 +100,7 @@ void Application::Run()
 	float frameStartTime = (m_Renderer->m_Time = (float)glfwGetTime()); // Game time at start of frame
 
 	m_State = ApplicationState::Running;
+	SceneService* sceneService = GetService<SceneService>();
 	while (!glfwWindowShouldClose(m_Window) && m_State == ApplicationState::Running)
 	{
 		float deltaTime = (float)m_Renderer->m_DeltaTime;
@@ -121,8 +123,12 @@ void Application::Run()
 		for (auto& pair : m_Services)
 			pair.second->OnDraw();
 
-		if (Camera::GetMainCamera())
-			m_Renderer->GetPipeline()->Draw(*Camera::GetMainCamera());
+		if (sceneService)
+		{
+			auto cameras = sceneService->CurrentScene()->Root().GetComponentsInChildren<Camera>();
+			for(Camera* camera : cameras)
+				m_Renderer->GetPipeline()->Draw(*camera);
+		}
 
 		ImGui::Render(); // Draw ImGUI result
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -177,17 +183,33 @@ void Application::Exit() { s_Instance->m_State = ApplicationState::Stopping; }
 
 void Application::UpdateGlobals()
 {
+#ifndef BUILD_SHARED_LIB
+	// Update singleton instances of classes,
+	//  this is used when using dll's and memory needs to be shared
+
 	s_Instance = this;
 	Input::s_Instance = m_Input;
 	Gizmos::s_Instance = m_Gizmos;
 	Renderer::s_Instance = m_Renderer;
 	ImGui::SetCurrentContext(m_ImGuiContext);
 	ResourceManager::s_Instance = m_ResourceManager;
+
+	// Re-load the OpenGL context.
+	// Since this isn't across threads there *should* be no issues :)
+	gladLoadGLLoader(m_GladProc);
+#endif
+}
+
+void Application::InitServices()
+{
+	AddService<SceneService>();
+	AddService<ExternalServices>();
 }
 
 void Application::CreateAppWindow()
 {
 	Log::Assert(glfwInit(), "Failed to initialize GLFW");
+	// m_GLFWGlobal = &_glfw;
 
 	glfwWindowHint(GLFW_SAMPLES, m_Args.Samples);
 	
@@ -225,7 +247,7 @@ void Application::CreateAppWindow()
 
 	// Finalise OpenGL creation
 	glfwMakeContextCurrent(m_Window);
-	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+	gladLoadGLLoader(m_GladProc = (GLADloadproc)glfwGetProcAddress);
 
 #if !defined(NDEBUG) && !defined(__APPLE__)
 	// If Debug configuration, enable OpenGL debug output
@@ -293,9 +315,10 @@ void Application::_SetFullscreen(bool fullscreen)
 
 void Application::SetupGizmos()
 {
+#ifndef NDEBUG
 	RenderPipelinePass pass;
 	FramebufferSpec spec;
-	spec.Attachments = { TextureFormat::RGBA8, TextureFormat::Depth };
+	spec.Attachments = { { TextureFormat::RGBA16F, TexturePixelType::Float }, TextureFormat::Depth };
 	spec.Resolution = Renderer::GetResolution();
 	pass.Pass = new Framebuffer(spec);
 	pass.Shader = new Shader(ShaderStageInfo
@@ -317,6 +340,7 @@ void Application::SetupGizmos()
 		Renderer::SetWireframe(false);
 	};
 	Renderer::GetPipeline()->AddPass(pass);
+#endif
 }
 
 #pragma region GLFW Callbacks

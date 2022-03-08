@@ -1,10 +1,11 @@
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Physics/Shapes.hpp>
 #include <Engine/Components/Physics/Collider.hpp>
 
 namespace Engine::Physics
 {
-	struct CollisionFrame
+	struct ENGINE_API CollisionFrame
 	{
 		Components::Collider* A;
 		Components::Rigidbody* ARigidbody;
@@ -15,7 +16,7 @@ namespace Engine::Physics
 		CollisionManifold Result;
 	};
 
-	struct Broadphase
+	struct ENGINE_API Broadphase
 	{
 		virtual void Insert(Components::Collider* collider) = 0;
 		virtual void Remove(Components::Collider* collider) = 0;
@@ -36,7 +37,7 @@ namespace Engine::Physics
 		virtual std::vector<Components::Collider*> Query(AABB& bounds) const = 0;
 	};
 
-	struct BasicBroadphase : public Broadphase
+	struct ENGINE_API BasicBroadphase : public Broadphase
 	{		
 		void Insert(Components::Collider* collider) override;
 		void Remove(Components::Collider* collider) override;

@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <Engine/Api.hpp>
 #include <Engine/Physics/Shapes.hpp>
 #include <Engine/Components/Component.hpp>
 #include <Engine/Physics/CollisionInfo.hpp>
@@ -20,25 +21,25 @@ namespace Engine::Components
 		/// </summary>
 		bool IsTrigger = false;
 
-		virtual Physics::OBB& GetBounds() = 0;
-		virtual bool LineTest(Physics::Line& line) = 0;
-		virtual bool IsPointInside(glm::vec3& point) const = 0;
-		virtual bool Raycast(Physics::Ray& ray, Physics::RaycastHit* outResult = nullptr) = 0;
+		ENGINE_API virtual Physics::OBB& GetBounds() = 0;
+		ENGINE_API virtual bool LineTest(Physics::Line& line) = 0;
+		ENGINE_API virtual bool IsPointInside(glm::vec3& point) const = 0;
+		ENGINE_API virtual bool Raycast(Physics::Ray& ray, Physics::RaycastHit* outResult = nullptr) = 0;
 
-		virtual bool CheckCollision(Collider* other) = 0;
-		virtual bool CheckCollision(BoxCollider* other) = 0;
-		virtual bool CheckCollision(PlaneCollider* other) = 0;
-		virtual bool CheckCollision(SphereCollider* other) = 0;
+		ENGINE_API virtual bool CheckCollision(Collider* other) = 0;
+		ENGINE_API virtual bool CheckCollision(BoxCollider* other) = 0;
+		ENGINE_API virtual bool CheckCollision(PlaneCollider* other) = 0;
+		ENGINE_API virtual bool CheckCollision(SphereCollider* other) = 0;
 
-		virtual glm::mat4& InverseTensor();
+		ENGINE_API virtual glm::mat4& InverseTensor();
 
-		void SetTriggerExitEvent(std::function<void(Collider*)> callback) { m_TriggerExitEvent = callback; }
-		void SetTriggerEnterEvent(std::function<void(Collider*)> callback) { m_TriggerEnterEvent = callback; }
-		void SetCollisionEvent(std::function<void(Collider*, Rigidbody*)> callback) { m_CollisionEvent = callback; }
+		ENGINE_API void SetTriggerExitEvent(std::function<void(Collider*)> callback) { m_TriggerExitEvent = callback; }
+		ENGINE_API void SetTriggerEnterEvent(std::function<void(Collider*)> callback) { m_TriggerEnterEvent = callback; }
+		ENGINE_API void SetCollisionEvent(std::function<void(Collider*, Rigidbody*)> callback) { m_CollisionEvent = callback; }
 
 	protected:
-		virtual void Added() override;
-		virtual void Removed() override;
+		ENGINE_API virtual void Added() override;
+		ENGINE_API virtual void Removed() override;
 
 	private:
 		std::function<void(Collider*)> m_TriggerExitEvent;

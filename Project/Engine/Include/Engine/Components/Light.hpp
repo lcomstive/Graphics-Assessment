@@ -12,5 +12,6 @@ namespace Engine::Components
 		glm::vec3 Colour = { 1.0f, 1.0f, 1.0f };
 
 		float Radius = 10.0f;
+		float Intensity = 1.0f;
 	};
 }

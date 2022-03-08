@@ -7,12 +7,13 @@
 **/
 
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Physics/Octree.hpp>
 #include <Engine/Physics/Broadphase/Broadphase.hpp>
 
 namespace Engine::Physics
 {
-	struct BroadphaseOctree : public Broadphase
+	struct ENGINE_API BroadphaseOctree : public Broadphase
 	{
 		BroadphaseOctree(unsigned int maxDepth = 5, float boundsWidth = 1000);
 

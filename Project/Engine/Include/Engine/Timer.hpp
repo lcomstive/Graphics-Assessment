@@ -2,6 +2,7 @@
 #include <chrono>
 #include <thread>
 #include <functional>
+#include <Engine/Api.hpp>
 
 namespace Engine
 {
@@ -18,17 +19,17 @@ namespace Engine
 	public:
 		static const std::chrono::milliseconds DefaultInterval;
 
-		Timer(unsigned int intervalMS);
-		Timer(std::chrono::milliseconds interval = DefaultInterval);
-		Timer(TimerCallback callback, std::chrono::milliseconds interval = DefaultInterval);
-		~Timer();
+		ENGINE_API Timer(unsigned int intervalMS);
+		ENGINE_API Timer(std::chrono::milliseconds interval = DefaultInterval);
+		ENGINE_API Timer(TimerCallback callback, std::chrono::milliseconds interval = DefaultInterval);
+		ENGINE_API ~Timer();
 
-		void Start();
-		void Stop();
-		std::chrono::milliseconds ElapsedTime();
+		ENGINE_API void Start();
+		ENGINE_API void Stop();
+		ENGINE_API std::chrono::milliseconds ElapsedTime();
 
-		void Restart();
+		ENGINE_API void Restart();
 
-		bool IsRunning();
+		ENGINE_API bool IsRunning();
 	};
 }

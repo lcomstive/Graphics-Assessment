@@ -30,7 +30,7 @@ FileWatcher::FileWatcher(string path, bool multithread) : FileWatcher(path, 1000
 void FileWatcher::Start(function<void(string, FileWatchStatus)> callback)
 {
 	m_Callback = callback;
-	m_Running = true;
+	m_Running.store(true);
 
 	if (m_Multithread)
 		m_LoopThread = thread(&FileWatcher::BeginWatching, this);
@@ -47,18 +47,19 @@ void FileWatcher::BeginWatching()
 	}
 
 	Log::Debug("Watching '" + m_Path + "' for changes");
-	while (m_Running)
+	while (m_Running.load())
 	{
-		this_thread::sleep_for(m_Interval);
-
 		// Check for deleted files
-		for (auto&& pair : m_WatchedPaths)
+		for(auto& it = m_WatchedPaths.begin(); it != m_WatchedPaths.end();)
 		{
-			if (filesystem::exists(pair.first))
+			if (filesystem::exists(it->first))
+			{
+				it++;
 				continue;
+			}
 
-			m_Callback(pair.first, FileWatchStatus::Removed);
-			m_WatchedPaths.erase(pair.first);
+			m_Callback(it->first, FileWatchStatus::Removed);
+			m_WatchedPaths.erase(it++);
 		}
 
 		// Check for modified or created files
@@ -89,12 +90,14 @@ void FileWatcher::BeginWatching()
 				m_Callback(m_Path, FileWatchStatus::Modified);
 			}
 		}
+
+		this_thread::sleep_for(m_Interval);
 	}
 }
 
 void FileWatcher::Stop()
 {
-	m_Running = false;
+	m_Running.store(false);
 
 	if (m_Multithread)
 		m_LoopThread.join();

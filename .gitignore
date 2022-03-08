@@ -35,3 +35,6 @@
 
 # Visual Studio
 .vs/
+
+# Locked files, when hot-reloading engine modules enabled
+Project/Applications/Assets/*.locked

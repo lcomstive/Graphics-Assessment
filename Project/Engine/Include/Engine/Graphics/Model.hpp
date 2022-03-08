@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <assimp/scene.h>
+#include <Engine/Api.hpp>
 #include <Engine/GameObject.hpp>
 #include <Engine/ResourceID.hpp>
 #include <Engine/DataStream.hpp>
@@ -12,7 +13,7 @@ namespace Engine::Graphics
 	class Model
 	{
 	public:
-		struct MeshData
+		struct ENGINE_API MeshData
 		{
 			std::string Name = "";
 			aiMatrix4x4 Transformation;
@@ -39,11 +40,11 @@ namespace Engine::Graphics
 		void Serialize(DataStream& stream);
 
 	public:
-		Model(std::string path);
-		~Model();
+		ENGINE_API Model(std::string path);
+		ENGINE_API ~Model();
 
-		MeshData& GetRootMeshData();
-		std::vector<ResourceID>& GetMeshes();
-		Engine::GameObject* CreateEntity(Engine::GameObject* parent = nullptr, glm::vec3 position = { 0, 0, 0 });
+		ENGINE_API MeshData& GetRootMeshData();
+		ENGINE_API std::vector<ResourceID>& GetMeshes();
+		ENGINE_API Engine::GameObject* CreateEntity(Engine::GameObject* parent = nullptr, glm::vec3 position = { 0, 0, 0 });
 	};
 }

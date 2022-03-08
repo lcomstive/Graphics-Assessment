@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <Engine/Api.hpp>
 
 namespace Engine
 {
@@ -49,37 +50,37 @@ namespace Engine
 
 #pragma region Keys
 		/// <returns>True if the key is not pressed down</returns>
-		static bool IsKeyUp(int key);
+		ENGINE_API static bool IsKeyUp(int key);
 
 		/// <returns>True if the key is currently pressed down</returns>
-		static bool IsKeyDown(int key);
+		ENGINE_API static bool IsKeyDown(int key);
 
 		/// <returns>True if the key is was pressed down this frame</returns>
-		static bool IsKeyPressed(int key);
+		ENGINE_API static bool IsKeyPressed(int key);
 
 		/// <returns>True if the key is was released this frame</returns>
-		static bool IsKeyReleased(int key);
+		ENGINE_API static bool IsKeyReleased(int key);
 #pragma endregion
 
 #pragma region Mouse
 		/// <returns>Mouse position relative to the top-left of the window</returns>
-		static glm::vec2 GetMousePosition();
+		ENGINE_API static glm::vec2 GetMousePosition();
 
 		/// <returns>Pixels moved since last frame</returns>
-		static glm::vec2 GetMouseDelta();
+		ENGINE_API static glm::vec2 GetMouseDelta();
 
 		/// <returns>Scroll offset since last frame</returns>
-		static float GetScrollDelta();
+		ENGINE_API static float GetScrollDelta();
 
-		static bool IsMouseUp(int button);
-		static bool IsMouseDown(int button);
-		static bool IsMousePressed(int button);
-		static bool IsMouseReleased(int button);
+		ENGINE_API static bool IsMouseUp(int button);
+		ENGINE_API static bool IsMouseDown(int button);
+		ENGINE_API static bool IsMousePressed(int button);
+		ENGINE_API static bool IsMouseReleased(int button);
 
 		/// <summary>
 		/// Can hide or show the mouse. When hidden mouse is locked and cannot exit window.
 		/// </summary>
-		static void ShowMouse(bool show = true);
+		ENGINE_API static void ShowMouse(bool show = true);
 #pragma endregion
 	};
 }

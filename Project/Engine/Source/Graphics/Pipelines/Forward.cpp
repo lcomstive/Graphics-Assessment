@@ -30,6 +30,8 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 	pass.DrawCallback = bind(&ForwardRenderPipeline::ForwardPass, this, ::placeholders::_1);
 
 	AddPass(pass);
+
+	Log::Info("Forward Renderer initialized");
 }
 
 ForwardRenderPipeline::~ForwardRenderPipeline()

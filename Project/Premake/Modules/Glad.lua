@@ -1,5 +1,5 @@
 project "Glad"
-	kind "StaticLib"
+	kind(DependencyType)
 	language "C"
 	staticruntime "Off"
 
@@ -14,6 +14,10 @@ project "Glad"
 	}
 
 	includedirs { "%{DependencyDir}glad/include" }
+
+	if DependencyType == "SharedLib" then
+		defines { "GLAD_GLAPI_EXPORT", "GLAD_GLAPI_EXPORT_BUILD" }
+	end
 
 	filter "system:windows"
 		systemversion "latest" -- Windows SDK

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <Engine/Api.hpp>
 #include <Engine/GameObject.hpp>
 #include <Engine/Physics/Octree.hpp>
 #include <Engine/Physics/PhysicsSystem.hpp>
@@ -14,14 +15,14 @@ namespace Engine
 		Physics::PhysicsSystem m_Physics;
 
 	public:
-		Scene(std::string name = "Scene");
+		ENGINE_API Scene(std::string name = "Scene");
 
-		GameObject& Root();
-		Physics::PhysicsSystem& GetPhysics();
+		ENGINE_API GameObject& Root();
+		ENGINE_API Physics::PhysicsSystem& GetPhysics();
 
-		void Draw();
-		void Clear();
-		void DrawGizmos();
-		void Update(float deltaTime);
+		ENGINE_API void Draw();
+		ENGINE_API void Clear();
+		ENGINE_API void DrawGizmos();
+		ENGINE_API void Update(float deltaTime);
 	};
 }

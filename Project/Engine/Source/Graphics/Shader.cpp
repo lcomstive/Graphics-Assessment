@@ -93,11 +93,7 @@ unsigned int Shader::CreateShader(const string& source, const unsigned int type)
 }
 
 Shader::Shader() : m_ShaderStages({}), m_IsDirty(false), m_Program(GL_INVALID_VALUE) { }
-
-Shader::Shader(ShaderStageInfo stageInfo) : m_Program(GL_INVALID_VALUE)
-{
-	UpdateStages(stageInfo);
-}
+Shader::Shader(ShaderStageInfo stageInfo) : m_Program(GL_INVALID_VALUE), m_ShaderStages(stageInfo), m_IsDirty(true) { }
 
 Shader::~Shader()
 {
@@ -281,7 +277,15 @@ void Shader::CacheUniformLocations()
 	m_Uniforms.insert(m_Uniforms.begin(), ShaderUniform{});
 }
 
-void Shader::Bind() { if (m_Program != GL_INVALID_VALUE) glUseProgram(m_Program); }
+void Shader::Bind()
+{
+	if (m_IsDirty)
+		UpdateStages(m_ShaderStages);
+
+	if (m_Program != GL_INVALID_VALUE)
+		glUseProgram(m_Program);
+}
+
 void Shader::Unbind()
 {
 	glUseProgram(0);

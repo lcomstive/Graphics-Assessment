@@ -1,10 +1,11 @@
 #pragma once
 #include <string>
 #include <exception>
+#include <Engine/Api.hpp>
 
 namespace Engine
 {
-	class Log
+	class ENGINE_API Log
 	{
 		static int s_LogLevel;
 	public:
@@ -14,7 +15,9 @@ namespace Engine
 			Info		= (1 << 1),
 			Warning		= (1 << 2),
 			Error		= (1 << 3),
-			Exception	= (1 << 4)
+			Exception	= (1 << 4),
+
+			All = (int)Debug | (int)Info | (int)Warning | (int)Error | (int)Exception
 		};
 
 		static void Debug(const char* msg);
@@ -34,6 +37,7 @@ namespace Engine
 		static void Assert(bool value, std::string msg);
 
 		static void SetLogLevel(int level);
+		static void SetLogLevel(LogLevel level);
 		static int GetLogLevel();
 
 		static void AddLogLevel(LogLevel level);

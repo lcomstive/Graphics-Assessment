@@ -1,8 +1,9 @@
 #pragma once
+#include <Engine/Api.hpp>
 
 namespace Engine
 {
-	typedef unsigned int ResourceID;
+	typedef ENGINE_API unsigned int ResourceID;
 
 	const ResourceID InvalidResourceID = 0;
 }

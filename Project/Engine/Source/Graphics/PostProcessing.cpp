@@ -23,21 +23,23 @@ FullscreenEffectPass::FullscreenEffectPass(std::string fragmentShaderPath)
 		Application::AssetDir + FullscreenVertexShader,
 		Application::AssetDir + fragmentShaderPath
 	});
-	m_Pass.DrawCallback = [=](Framebuffer* previous)
-	{
-		previous->GetColourAttachment()->Bind();
-		m_Pass.Shader->Set("inputTexture", 0);
-		OnDraw(m_Pass.Shader);
-
-		// DRAW FULLSCREEN QUAD //
-		ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
-	};
+	m_Pass.DrawCallback = bind(&FullscreenEffectPass::DrawCallback, this, ::placeholders::_1);
 }
 
 FullscreenEffectPass::~FullscreenEffectPass()
 {
 	delete m_Pass.Pass;
 	delete m_Pass.Shader;
+}
+
+void FullscreenEffectPass::DrawCallback(Framebuffer* previous)
+{
+	previous->GetColourAttachment()->Bind();
+	m_Pass.Shader->Set("inputTexture", 0);
+	OnDraw(m_Pass.Shader);
+
+	// DRAW FULLSCREEN QUAD //
+	ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
 }
 
 RenderPipelinePass& FullscreenEffectPass::GetPipelinePass() { return m_Pass; }

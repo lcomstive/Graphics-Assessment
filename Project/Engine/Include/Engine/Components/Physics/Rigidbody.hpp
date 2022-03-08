@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Log.hpp>
 #include <Engine/Components/Component.hpp>
 #include <Engine/Physics/PhysicsSystem.hpp>
@@ -13,31 +14,31 @@ namespace Engine::Components
 		bool UseGravity = true;
 		bool IsTrigger = false;
 
-		Rigidbody();
+		ENGINE_API Rigidbody();
 
-		Physics::PhysicsSystem& GetSystem();
+		ENGINE_API Physics::PhysicsSystem& GetSystem();
 
-		void ApplyForce(glm::vec3 force, ForceMode mode = ForceMode::Acceleration);
-		void ApplyForce(glm::vec3 force, glm::vec3 forcePosition, ForceMode mode = ForceMode::Acceleration, bool globalForcePosition = false);
-		void AddRotationalImpulse(glm::vec3 point, glm::vec3 impulse, bool globalPoint = false);
+		ENGINE_API void ApplyForce(glm::vec3 force, ForceMode mode = ForceMode::Acceleration);
+		ENGINE_API void ApplyForce(glm::vec3 force, glm::vec3 forcePosition, ForceMode mode = ForceMode::Acceleration, bool globalForcePosition = false);
+		ENGINE_API void AddRotationalImpulse(glm::vec3 point, glm::vec3 impulse, bool globalPoint = false);
 
-		float GetMass();
-		void  SetMass(float value);
+		ENGINE_API float GetMass();
+		ENGINE_API void  SetMass(float value);
 
-		float GetRestitution();
-		void  SetRestitution(float value);
+		ENGINE_API float GetRestitution();
+		ENGINE_API void  SetRestitution(float value);
 
-		float GetFriction();
-		void  SetFriction(float value);
+		ENGINE_API float GetFriction();
+		ENGINE_API void  SetFriction(float value);
 		
-		bool IsStatic();
-		void SetStatic(bool isStatic);
+		ENGINE_API bool IsStatic();
+		ENGINE_API void SetStatic(bool isStatic);
 
-		float InverseMass();
-		float KineticEnergy();
-		float PotentialEnergy();
+		ENGINE_API float InverseMass();
+		ENGINE_API float KineticEnergy();
+		ENGINE_API float PotentialEnergy();
 
-		glm::vec3 GetVelocity();
+		ENGINE_API glm::vec3 GetVelocity();
 
 	private:
 		bool m_IsStatic = false;

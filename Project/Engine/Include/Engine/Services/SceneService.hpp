@@ -7,20 +7,20 @@ namespace Engine::Services
 {
 	struct SceneService : public Service
 	{
-		virtual void OnShutdown() override;
-		virtual void OnDraw() override;
-		virtual void OnUpdate(float deltaTime) override;
-		virtual void OnDrawGizmos() override;
+		ENGINE_API virtual void OnShutdown() override;
+		ENGINE_API virtual void OnDraw() override;
+		ENGINE_API virtual void OnUpdate(float deltaTime) override;
+		ENGINE_API virtual void OnDrawGizmos() override;
 
-		Scene* CurrentScene();
-		void MakeCurrent(std::string name);
+		ENGINE_API Scene* CurrentScene();
+		ENGINE_API void MakeCurrent(std::string name);
 
-		Scene* GetScene(std::string name);
-		Scene* NewScene(std::string name, bool active = true);
-		void UnloadScene(std::string name);
-		void UnloadAllScenes();
+		ENGINE_API Scene* GetScene(std::string name);
+		ENGINE_API Scene* NewScene(std::string name, bool active = true);
+		ENGINE_API void UnloadScene(std::string name);
+		ENGINE_API void UnloadAllScenes();
 
-		void SetActive(std::string name, bool active = true);
+		ENGINE_API void SetActive(std::string name, bool active = true);
 
 	private:
 		struct SceneState

@@ -12,8 +12,6 @@ using namespace Engine;
 using namespace Engine::Graphics;
 using namespace Engine::Components;
 
-Camera* Camera::s_MainCamera = nullptr;
-
 const vec3 WorldUp = { 0, 1, 0 };
 
 Camera::Camera() :
@@ -24,12 +22,12 @@ Camera::Camera() :
 	m_GlobalPosition(0),
 	m_ProjectionMatrix(1.0f)
 {
-	if (!s_MainCamera)
-		SetMainCamera();
+	if (!Renderer::GetMainCamera())
+		Renderer::SetMainCamera(this);
 }
 
-void Camera::SetMainCamera() { s_MainCamera = this; }
-Camera* Camera::GetMainCamera() { return s_MainCamera; }
+void Camera::SetMainCamera() { Renderer::SetMainCamera(this); }
+Camera* Camera::GetMainCamera() { return Renderer::GetMainCamera(); }
 
 mat4 Camera::GetViewMatrix() { return m_ViewMatrix; }
 mat4 Camera::GetProjectionMatrix() { return m_ProjectionMatrix; }
@@ -48,8 +46,8 @@ vec3 Camera::GetForwardDirection() { return m_Forward; }
 void Camera::Removed()
 {
 	Component::Removed();
-	if (s_MainCamera == this)
-		s_MainCamera = nullptr;
+	if (Renderer::GetMainCamera() == this)
+		Renderer::SetMainCamera(nullptr);
 }
 
 void Camera::Update(float deltaTime)

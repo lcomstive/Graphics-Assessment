@@ -3,19 +3,28 @@
 #include <string>
 #include <filesystem>
 #include <glm/glm.hpp>
+#include <Engine/Api.hpp>
 #include <Engine/FileWatcher.hpp>
 
 namespace Engine::Graphics
 {
-	struct ShaderStageInfo
+	struct ENGINE_API ShaderStageInfo
 	{
 		std::string VertexPath;
 		std::string FragmentPath;
 		std::string ComputePath;
 		std::string GeometryPath;
+
+		bool Empty()
+		{
+			return VertexPath.empty() &&
+				FragmentPath.empty() &&
+				ComputePath.empty() &&
+				GeometryPath.empty();
+		}
 	};
 
-	struct ShaderUniform
+	struct ENGINE_API ShaderUniform
 	{		
 		int Location = -1;
 		std::string Name;
@@ -27,7 +36,7 @@ namespace Engine::Graphics
 		bool m_IsDirty;
 		unsigned int m_Program;
 		ShaderStageInfo m_ShaderStages;
-		std::vector<ShaderUniform> m_Uniforms;
+		std::vector<ShaderUniform> m_Uniforms = { {} };
 		std::unordered_map<std::string, FileWatcher*> m_Watchers;
 
 		void Destroy();
@@ -38,43 +47,43 @@ namespace Engine::Graphics
 		void ShaderSourceChangedCallback(std::string path, FileWatchStatus changeType);
 
 	public:
-		Shader();
-		Shader(ShaderStageInfo stageInfo);
-		~Shader();
+		ENGINE_API Shader();
+		ENGINE_API Shader(ShaderStageInfo stageInfo);
+		ENGINE_API ~Shader();
 
-		ShaderStageInfo& GetStages();
-		void UpdateStages(ShaderStageInfo stageInfo);
+		ENGINE_API ShaderStageInfo& GetStages();
+		ENGINE_API void UpdateStages(ShaderStageInfo stageInfo);
 
-		void Bind();
-		void Unbind();
+		ENGINE_API void Bind();
+		ENGINE_API void Unbind();
 
-		unsigned int GetProgram();
-		unsigned int GetUniformCount();
+		ENGINE_API unsigned int GetProgram();
+		ENGINE_API unsigned int GetUniformCount();
 
-		void Set(int& location, int value) const;
-		void Set(int& location, bool value) const;
-		void Set(int& location, float value) const;
-		void Set(int& location, double value) const;
-		void Set(int& location, glm::vec2 value) const;
-		void Set(int& location, glm::vec3 value) const;
-		void Set(int& location, glm::vec4 value) const;
-		void Set(int& location, glm::mat3 value) const;
-		void Set(int& location, glm::mat4 value) const;
+		ENGINE_API void Set(int& location, int value) const;
+		ENGINE_API void Set(int& location, bool value) const;
+		ENGINE_API void Set(int& location, float value) const;
+		ENGINE_API void Set(int& location, double value) const;
+		ENGINE_API void Set(int& location, glm::vec2 value) const;
+		ENGINE_API void Set(int& location, glm::vec3 value) const;
+		ENGINE_API void Set(int& location, glm::vec4 value) const;
+		ENGINE_API void Set(int& location, glm::mat3 value) const;
+		ENGINE_API void Set(int& location, glm::mat4 value) const;
 
-		void Set(std::string locationName, int value);
-		void Set(std::string locationName, bool value);
-		void Set(std::string locationName, float value);
-		void Set(std::string locationName, double value);
-		void Set(std::string locationName, glm::vec2 value);
-		void Set(std::string locationName, glm::vec3 value);
-		void Set(std::string locationName, glm::vec4 value);
-		void Set(std::string locationName, glm::mat3 value);
-		void Set(std::string locationName, glm::mat4 value);
+		ENGINE_API void Set(std::string locationName, int value);
+		ENGINE_API void Set(std::string locationName, bool value);
+		ENGINE_API void Set(std::string locationName, float value);
+		ENGINE_API void Set(std::string locationName, double value);
+		ENGINE_API void Set(std::string locationName, glm::vec2 value);
+		ENGINE_API void Set(std::string locationName, glm::vec3 value);
+		ENGINE_API void Set(std::string locationName, glm::vec4 value);
+		ENGINE_API void Set(std::string locationName, glm::mat3 value);
+		ENGINE_API void Set(std::string locationName, glm::mat4 value);
 
 		/// <returns>Information about the uniform at location, or an invalid struct if outside of bounds</returns>
-		ShaderUniform& GetUniformInfo(int location);
+		ENGINE_API ShaderUniform& GetUniformInfo(int location);
 
 		/// <returns>Information about the uniform at locationName, or an invalid struct if not found</returns>
-		ShaderUniform& GetUniformInfo(std::string& locationName);
+		ENGINE_API ShaderUniform& GetUniformInfo(std::string& locationName);
 	};
 }

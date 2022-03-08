@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <Engine/Api.hpp>
 #include <Engine/Graphics/Mesh.hpp>
 #include <Engine/Graphics/Material.hpp>
 #include <Engine/Components/Component.hpp>
@@ -8,7 +9,7 @@ namespace Engine::Components
 {
 	struct MeshRenderer : public Component
 	{
-		struct MeshInfo
+		struct ENGINE_API MeshInfo
 		{
 			ResourceID Mesh = InvalidResourceID;
 			Graphics::Material Material = {};
@@ -17,6 +18,6 @@ namespace Engine::Components
 		std::vector<MeshInfo> Meshes;
 
 	protected:
-		void Draw() override;
+		ENGINE_API void Draw() override;
 	};
 }

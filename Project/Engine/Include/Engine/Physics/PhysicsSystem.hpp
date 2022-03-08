@@ -5,6 +5,7 @@
 #include <functional>
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <Engine/Api.hpp>
 #include <Engine/Log.hpp>
 #include <Engine/Physics/Octree.hpp>
 #include <Engine/Components/Physics/Collider.hpp>
@@ -18,7 +19,7 @@ namespace Engine::Components { struct Rigidbody; }
 
 namespace Engine::Physics
 {
-	enum class PhysicsPlayState : int { Stopped = 0, Playing, Paused };
+	enum class ENGINE_API PhysicsPlayState : int { Stopped = 0, Playing, Paused };
 
 	class PhysicsSystem
 	{
@@ -81,29 +82,29 @@ namespace Engine::Physics
 		int m_Substeps;
 
 	public:
-		PhysicsSystem(std::chrono::milliseconds fixedTimestep = 50ms);
-		~PhysicsSystem();
+		ENGINE_API PhysicsSystem(std::chrono::milliseconds fixedTimestep = 50ms);
+		ENGINE_API ~PhysicsSystem();
 
-		void Start();
-		void Stop();
+		ENGINE_API void Start();
+		ENGINE_API void Stop();
 
-		void DrawGizmos();
+		ENGINE_API void DrawGizmos();
 
-		void Resume();
-		void Pause();
-		void TogglePause();
+		ENGINE_API void Resume();
+		ENGINE_API void Pause();
+		ENGINE_API void TogglePause();
 
-		std::chrono::milliseconds Timestep();
-		std::chrono::milliseconds LastTimestep();
-		void SetTimestep(std::chrono::milliseconds timestep);
+		ENGINE_API std::chrono::milliseconds Timestep();
+		ENGINE_API std::chrono::milliseconds LastTimestep();
+		ENGINE_API void SetTimestep(std::chrono::milliseconds timestep);
 
-		void SetGravity(glm::vec3 gravity);
-		glm::vec3 GetGravity();
+		ENGINE_API void SetGravity(glm::vec3 gravity);
+		ENGINE_API glm::vec3 GetGravity();
 
-		PhysicsPlayState GetState();
+		ENGINE_API PhysicsPlayState GetState();
 
 		template<typename T, class... Args>
-		T* SetBroadphase(Args... args)
+		ENGINE_EXPORT T* SetBroadphase(Args... args)
 		{
 			Log::Assert(std::is_base_of<Broadphase, T>(), "Broadphase needs to have base class of Engine::Phyics::Broadphase");
 
@@ -114,10 +115,10 @@ namespace Engine::Physics
 			return (T*)m_Broadphase;
 		}
 
-		bool LineTest(Line line, Components::Collider* ignoreCollider);
-		Components::Collider* Raycast(Ray ray, RaycastHit* outResult = nullptr);
-		Components::Collider* Raycast(Ray ray, Components::Collider* ignoreCollider, RaycastHit* outResult = nullptr);
-		std::vector<Components::Collider*> Query(Sphere& bounds);
-		std::vector<Components::Collider*> Query(AABB& bounds);
+		ENGINE_API bool LineTest(Line line, Components::Collider* ignoreCollider);
+		ENGINE_API Components::Collider* Raycast(Ray ray, RaycastHit* outResult = nullptr);
+		ENGINE_API Components::Collider* Raycast(Ray ray, Components::Collider* ignoreCollider, RaycastHit* outResult = nullptr);
+		ENGINE_API std::vector<Components::Collider*> Query(Sphere& bounds);
+		ENGINE_API std::vector<Components::Collider*> Query(AABB& bounds);
 	};
 }

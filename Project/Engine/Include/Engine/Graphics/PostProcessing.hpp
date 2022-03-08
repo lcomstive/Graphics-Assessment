@@ -1,4 +1,5 @@
 #pragma once
+#include <Engine/Api.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
 
 namespace Engine::Graphics
@@ -7,17 +8,19 @@ namespace Engine::Graphics
 	{
 		RenderPipelinePass m_Pass;
 
+		void DrawCallback(Framebuffer* previous);
+
 	protected:
 		/// <summary>
 		/// Useful for things like setting shader variables prior to drawing
 		/// </summary>
-		virtual void OnDraw(Shader* shader) { }
+		ENGINE_API virtual void OnDraw(Shader* shader) { }
 
 	public:
-		FullscreenEffectPass(std::string fragmentShaderPath);
-		~FullscreenEffectPass();
+		ENGINE_API FullscreenEffectPass(std::string fragmentShaderPath);
+		ENGINE_API ~FullscreenEffectPass();
 
-		RenderPipelinePass& GetPipelinePass();
+		ENGINE_API RenderPipelinePass& GetPipelinePass();
 	};
 
 	enum class Tonemapper { None = 0, Aces, Reinhard };
@@ -25,13 +28,13 @@ namespace Engine::Graphics
 	class TonemappingPass : public FullscreenEffectPass
 	{
 	public:
-		TonemappingPass();
-
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;
 		Tonemapper Tonemapper = Tonemapper::None;
+		
+		ENGINE_API TonemappingPass();
 
 	protected:
-		virtual void OnDraw(Shader* shader) override;
+		ENGINE_API virtual void OnDraw(Shader* shader) override;
 	};
 }

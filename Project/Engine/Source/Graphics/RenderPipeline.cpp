@@ -32,7 +32,7 @@ void RenderPipeline::Draw(Camera& camera)
 		{
 			m_CurrentShader->Bind();
 
-			m_CurrentShader->Set("resolution", vec2 { Renderer::GetResolution().x, Renderer::GetResolution().y });
+			m_CurrentShader->Set("resolution", vec2{ Renderer::GetResolution().x, Renderer::GetResolution().y });
 			m_CurrentShader->Set("time", Renderer::GetTime());
 			m_CurrentShader->Set("deltaTime", Renderer::GetDeltaTime());
 
@@ -41,10 +41,11 @@ void RenderPipeline::Draw(Camera& camera)
 			auto lights = scene->Root().GetComponentsInChildren<Light>();
 			int lightCount = std::min((int32_t)lights.size(), MAX_LIGHTS);
 			m_CurrentShader->Set("lightCount", lightCount);
-			for(int i = 0; i < lightCount; i++)
+			for (int i = 0; i < lightCount; i++)
 			{
 				m_CurrentShader->Set("lights[" + to_string(i) + "].Colour", lights[i]->Colour);
 				m_CurrentShader->Set("lights[" + to_string(i) + "].Radius", lights[i]->Radius);
+				m_CurrentShader->Set("lights[" + to_string(i) + "].Intensity", lights[i]->Intensity);
 				m_CurrentShader->Set("lights[" + to_string(i) + "].Position", lights[i]->GetTransform()->Position);
 			}
 		}

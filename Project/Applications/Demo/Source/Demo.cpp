@@ -35,30 +35,16 @@ const int GridSize = 250;
 vector<GameObject*> CreatedObjects;
 
 // Main Model
-const string ModelPath = "Models/Cerberus/Cerberus_LP.fbx";
-const string NormalMapPath = "Models/Cerberus/Textures/Cerberus_N.tga";
-const string MetalnessMapPath = "Models/Cerberus/Textures/Cerberus_M.tga";
-const string RoughnessMapPath = "Models/Cerberus/Textures/Cerberus_R.tga";
+#define CERBERUS	1
+#define SPONZA		0
 
-ResourceID MainModel;
-Texture *NormalMap, *MetalnessMap, *RoughnessMap;
-
-// Floor Texture
-const string FloorTexturePath = "Textures/Rock/Rock_044_BaseColor.jpg";
-const string FloorNormalMapPath = "Textures/Rock/Rock_044_Normal.jpg";
-const string FloorRoughnessMapPath = "Textures/Rock/Rock_044_Roughness.jpg";
-const string FloorHeightMapPath = "Textures/Rock/Rock_044_Height.jpg";
-Material FloorMaterial;
-
-// Rusted Iron Texture
-const string RustedIronTexturePath = "Textures/Rusted Iron/rustediron2_basecolor.png";
-const string RustedIronNormalMapPath = "Textures/Rusted Iron/rustediron2_normal.png";
-const string RustedIronRoughnessMapPath = "Textures/Rusted Iron/rustediron2_roughness.png";
-const string RustedIronMetallicMapPath = "Textures/Rusted Iron/rustediron2_metallic.png";
-Material RustedIronMaterial;
-
-// Post Processing
-TonemappingPass* PP_Tonemapping;
+#if CERBERUS
+ResourceID CerberusModel;
+const string CerberusModelPath = "Models/Cerberus/Cerberus_LP.fbx";
+const string CerberusNormalMapPath = "Models/Cerberus/Textures/Cerberus_N.tga";
+const string CerberusMetalnessMapPath = "Models/Cerberus/Textures/Cerberus_M.tga";
+const string CerberusRoughnessMapPath = "Models/Cerberus/Textures/Cerberus_R.tga";
+ResourceID CerberusNormalMap, CerberusMetalnessMap, CerberusRoughnessMap;
 
 // Lights
 struct LightData
@@ -70,7 +56,25 @@ struct LightData
 	Transform* Transform;
 	bool SwapDirection = false;
 };
-vector<LightData> Lights;
+
+vector<LightData> CerberusLights;
+#endif
+
+#if SPONZA
+ResourceID SponzaModel;
+vector<Light*> SponzaLights;
+const string SponzaModelPath = "Models/Sponza/sponza.glb";
+#endif
+
+// Floor Texture
+const string FloorTexturePath = "Textures/Rock/Rock_044_BaseColor.jpg";
+const string FloorNormalMapPath = "Textures/Rock/Rock_044_Normal.jpg";
+const string FloorRoughnessMapPath = "Textures/Rock/Rock_044_Roughness.jpg";
+const string FloorHeightMapPath = "Textures/Rock/Rock_044_Height.jpg";
+Material FloorMaterial;
+
+// Post Processing
+TonemappingPass* PP_Tonemapping;
 
 #if _WIN32
 const string ExternalServicePath = "Services/Test Service.dll";
@@ -78,66 +82,73 @@ const string ExternalServicePath = "Services/Test Service.dll";
 const string ExternalServicePath = "Services/Test Service.so";
 #endif
 
-#define TEST_EXTERNAL 1
-#if !TEST_EXTERNAL
-GameObject* TestGO = nullptr;
-#endif
-
-void SetMaterialTextures(Model::MeshData& meshData)
+void SetMaterialTextures(
+	Model::MeshData& meshData,
+	ResourceID normalMap,
+	ResourceID metalnessMap = InvalidResourceID,
+	ResourceID roughnessMap = InvalidResourceID)
 {
-	for(Material& mat : meshData.Materials)
+	for (Material& mat : meshData.Materials)
 	{
-		mat.NormalMap = NormalMap;
-		mat.MetalnessMap = MetalnessMap;
-		mat.RoughnessMap = RoughnessMap;
+		mat.NormalMap = normalMap;
+		mat.MetalnessMap = metalnessMap;
+		mat.RoughnessMap = roughnessMap;
 	}
 
 	for (Model::MeshData& child : meshData.Children)
-		SetMaterialTextures(child);
+		SetMaterialTextures(child, normalMap, metalnessMap, roughnessMap);
 }
 
 void Demo::OnStart()
 {
+	Log::SetLogLevel(Log::LogLevel::All);
+
+	const string Title = "Demo App";
+	Application::SetTitle(Title);
+
 	string appDir = Application::AssetDir;
 	// Set ImGui Font
 	ImGui::GetIO().Fonts->AddFontFromFileTTF((appDir + "Fonts/Source Sans Pro/SourceSansPro-Regular.ttf").c_str(), 16.0f);
 
-	// Main Model
-	MainModel = ResourceManager::Load<Model>(appDir + ModelPath);
-	NormalMap = new Texture(appDir + NormalMapPath);
-	MetalnessMap = new Texture(appDir + MetalnessMapPath);
-	RoughnessMap = new Texture(appDir + RoughnessMapPath);
-	SetMaterialTextures(ResourceManager::Get<Model>(MainModel)->GetRootMeshData());
+#if CERBERUS
+	CerberusModel = ResourceManager::Load<Model>(appDir + CerberusModelPath);
+	CerberusNormalMap = ResourceManager::Load<Texture>(appDir + CerberusNormalMapPath);
+	CerberusMetalnessMap = ResourceManager::Load<Texture>(appDir + CerberusMetalnessMapPath);
+	CerberusRoughnessMap = ResourceManager::Load<Texture>(appDir + CerberusRoughnessMapPath);
+
+	SetMaterialTextures(
+		ResourceManager::Get<Model>(CerberusModel)->GetRootMeshData(),
+		CerberusNormalMap,
+		CerberusMetalnessMap,
+		CerberusRoughnessMap
+	);
+#endif
+
+#if SPONZA
+	SponzaModel = ResourceManager::Load<Model>(appDir + SponzaModelPath);
+#endif
 
 	// Floor
-	FloorMaterial.AlbedoMap = new Texture(appDir + FloorTexturePath);
-	FloorMaterial.NormalMap = new Texture(appDir + FloorNormalMapPath);
-	FloorMaterial.RoughnessMap = new Texture(appDir + FloorRoughnessMapPath);
+	FloorMaterial.AlbedoMap = ResourceManager::Load<Texture>(appDir + FloorTexturePath);
+	FloorMaterial.NormalMap = ResourceManager::Load<Texture>(appDir + FloorNormalMapPath);
+	FloorMaterial.RoughnessMap = ResourceManager::Load<Texture>(appDir + FloorRoughnessMapPath);
 
-	// Rusted Iron Material
-	RustedIronMaterial.AlbedoMap = new Texture(appDir + RustedIronTexturePath);
-	RustedIronMaterial.NormalMap = new Texture(appDir + RustedIronNormalMapPath);
-	RustedIronMaterial.RoughnessMap = new Texture(appDir + RustedIronRoughnessMapPath);
-	RustedIronMaterial.MetalnessMap = new Texture(appDir + RustedIronMetallicMapPath);
+	Log::Info("Adding tonemapping pass");
 
 	// Tonemapping
 	PP_Tonemapping = new TonemappingPass();
 	Renderer::GetPipeline()->AddPass(PP_Tonemapping->GetPipelinePass());
 
+	Log::Info("Settings up scene...");
+
 	// Create scene
 	ResetScene();
 
 	// Load external service
-#if TEST_EXTERNAL
-	// Application::GetService<ExternalServices>()->Add(appDir + ExternalServicePath);
-#else
-	TestGO = new GameObject(Application::GetService<SceneService>()->CurrentScene(), "Test GO");
+	Log::Info("Loading external service...");
+	Application::GetService<ExternalServices>()->Add(appDir + ExternalServicePath);
 
-	Material mat;
-	mat.Albedo = { 1, 0, 1, 0.25f };
-	TestGO->GetTransform()->Scale = vec3(5.0f);
-	TestGO->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), mat } };
-#endif
+	Log::Info("Finished demo startup");
 }
 
 void Demo::OnShutdown()
@@ -147,6 +158,11 @@ void Demo::OnShutdown()
 #if DRAW_GRID
 	ResourceManager::Unload(GridMeshID);
 #endif
+
+	Application::GetService<ExternalServices>()->Remove(Application::AssetDir + ExternalServicePath);
+
+	for (GameObject* go : CreatedObjects)
+		delete go;
 }
 
 void Demo::ResetScene()
@@ -166,25 +182,26 @@ void Demo::ResetScene()
 	// Main Camera //
 	GameObject* cameraObj = new GameObject(scene, "Main Camera");
 	cameraObj->AddComponent<OrbitCameraController>();
-	cameraObj->GetTransform()->Position = { 0, 0, 20 };
+	cameraObj->GetTransform()->Position = { 0, 0, 0 };
 	cameraObj->GetTransform()->Rotation = { 0, radians(-90.0f), 0 }; // From euler angles
 	CreatedObjects.emplace_back(cameraObj);
 
+#if CERBERUS
 	// Cerberus //
-	Model* model = ResourceManager::Get<Model>(MainModel);
-	GameObject* cerberus = model->CreateEntity(&scene->Root());
+	Model* cerberusModel = ResourceManager::Get<Model>(CerberusModel);
+	GameObject* cerberus = cerberusModel->CreateEntity(&scene->Root());
 	cerberus->GetTransform()->Scale = vec3(0.1f);
 	cerberus->GetTransform()->Position = { 0, 1, 5 };
 	cerberus->GetTransform()->Rotation = { radians(-90.0f), 0, radians(90.0f) };
 	CreatedObjects.emplace_back(cerberus);
 
-	cerberus = model->CreateEntity(&scene->Root());
+	cerberus = cerberusModel->CreateEntity(&scene->Root());
 	cerberus->GetTransform()->Scale = vec3(0.075f);
 	cerberus->GetTransform()->Position = { -2.5f, 1, -2 };
 	cerberus->GetTransform()->Rotation = { radians(-90.0f), 0, radians(-60.0f) };
 	CreatedObjects.emplace_back(cerberus);
 
-	cerberus = model->CreateEntity(&scene->Root());
+	cerberus = cerberusModel->CreateEntity(&scene->Root());
 	cerberus->GetTransform()->Scale = vec3(0.05f);
 	cerberus->GetTransform()->Position = { -5, 1, -2.5f };
 	cerberus->GetTransform()->Rotation = { radians(-90.0f), 0, radians(160.0f) };
@@ -198,7 +215,7 @@ void Demo::ResetScene()
 
 	Material lightMaterial;
 
-	const int LightCount = 20;
+	const int LightCount = 50;
 	for (int i = 0; i < LightCount; i++)
 	{
 		lightMaterial.Albedo =
@@ -223,37 +240,58 @@ void Demo::ResetScene()
 		data.SwapDirection = Random(0, 100) > 50;
 		data.Offset = radians(Random(0, 360));
 
-		Lights.emplace_back(data);
+		CerberusLights.emplace_back(data);
 
 		CreatedObjects.emplace_back(light);
 	}
+#endif
 
-	const int Rows = 5;
-	const float RowSpacing = 2.5f;
-	for (int i = 0; i < Rows; i++)
+#if SPONZA
+	// Sponza //
+	Model* sponzaModel = ResourceManager::Get<Model>(SponzaModel);
+	GameObject* sponza = sponzaModel->CreateEntity(&scene->Root());
+	sponza->GetTransform()->Position = { 0, -5, 0 };
+	sponza->GetTransform()->Rotation = { 0, radians(-90.0f), 0 };
+	CreatedObjects.emplace_back(sponza);
+
+
+	const int SponzaLightCount = 4;
+	const float SponzaLightSpawnY = -3;
+	const float MaxSponzaLightSpawnWidth = 6;
+	for (int i = 0; i < SponzaLightCount; i++)
 	{
-		for (int j = 0; j < Rows; j++)
+		GameObject* sponzaLightGO = new GameObject(scene, "Sponza Light");
+		Light* sponzaLight = sponzaLightGO->AddComponent<Light>();
+		sponzaLight->Radius = 10.0f;
+		sponzaLight->Intensity = 1.0f;
+
+		sponzaLight->Colour =
 		{
-			GameObject* sphere = new GameObject(scene, "Sphere (" + to_string(i) + ", " + to_string(j) + ")");
-			sphere->AddComponent<MeshRenderer>()->Meshes = { { j % 2 == 0 ? Mesh::Sphere() : Mesh::Cube(), RustedIronMaterial}};
-			sphere->GetTransform()->Position =
-			{
-				(j - (Rows / 2.0f)) * RowSpacing,
-				(i - (Rows / 2.0f)) * RowSpacing,
-				0.0f
-			};
-			CreatedObjects.emplace_back(sphere);
-		}
+			Random(0.5f, 1.0f),
+			Random(0.5f, 1.0f),
+			Random(0.5f, 1.0f)
+		};
+
+		sponzaLightGO->GetTransform()->Position =
+		{
+			-MaxSponzaLightSpawnWidth + (MaxSponzaLightSpawnWidth / 2.0f) * i,
+			SponzaLightSpawnY,
+			0
+		};
+
+		SponzaLights.emplace_back(sponzaLight);
+		CreatedObjects.emplace_back(sponzaLightGO);
 	}
+#endif
 }
 
 void Demo::OnUpdate(float deltaTime)
 {
 	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
-	
+
 	if (Input::IsKeyPressed(GLFW_KEY_F11))
 		Application::ToggleFullscreen();
-	
+
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Application::Exit();
 
@@ -267,22 +305,27 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyDown(GLFW_KEY_LEFT))  lightMovement.x -= LightMoveSpeed * deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_RIGHT)) lightMovement.x += LightMoveSpeed * deltaTime;
 
-	for (LightData data : Lights)
+#if CERBERUS
+	for (LightData data : CerberusLights)
 	{
 		float time = Renderer::GetTime() * (data.SwapDirection ? -1.0f : 1.0f) * data.Speed + data.Offset;
 		data.Transform->Position.x = cos(radians(time)) * data.Distance;
 		data.Transform->Position.z = sin(radians(time)) * data.Distance;
 	}
+#endif
 
-#if !TEST_EXTERNAL
-	TestGO->GetTransform()->Position.y = cos(Renderer::GetTime()) * 2.5f;
+#if SPONZA
+	for (Light* light : SponzaLights)
+	{
+		light->GetTransform()->Position.z = sin(Renderer::GetTime() * 0.5f) * 7.5f;
+	}
 #endif
 }
 
 void Demo::OnDraw()
 {
 	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
-	
+
 	// Draw GUI
 	static bool controlsWindowOpen = true;
 	if (ImGui::Begin("Controls", &controlsWindowOpen))
@@ -291,7 +334,6 @@ void Demo::OnDraw()
 		ImGui::Text("WASD:		  Move camera");
 		ImGui::Text("Q/E:		  Move camera up/down");
 		ImGui::Text("Right Mouse: Hold and move mouse to look around");
-		ImGui::Text("F:			  Applies force at cursor position");
 		ImGui::Text("F11:		  Toggle fullscreen");
 
 		ImGui::End();
@@ -301,6 +343,7 @@ void Demo::OnDraw()
 	const ImVec4 ColourBad = { 1, 0, 0, 1 };
 
 	auto& transforms = scene->Root().GetComponentsInChildren<Transform>();
+	auto& totalLights = scene->Root().GetComponentsInChildren<Light>();
 
 	static bool debugWindowOpen = true;
 	PhysicsSystem& physicsSystem = scene->GetPhysics();
@@ -313,6 +356,7 @@ void Demo::OnDraw()
 		ImGui::Text("FPS: %f\n", Renderer::GetFPS());
 		ImGui::Text("Total Objects: %i", (int)CreatedObjects.size());
 		ImGui::Text("Transforms: %i", (int)transforms.size());
+		ImGui::Text("Lights: %i", (int)totalLights.size());
 		ImGui::TextColored(
 			(frameTime < (1000.0f / 30.0f)) ? ColourGood : ColourBad,
 			"Render  Frame Time: %.1fms",
@@ -326,7 +370,7 @@ void Demo::OnDraw()
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
 		ImGui::Text("Samples: %d", Renderer::GetSamples());
 
-		static string TonemapperNames[] = {"None", "Aces", "Reinhard" };
+		static string TonemapperNames[] = { "None", "Aces", "Reinhard" };
 		if (ImGui::BeginCombo("Tonemapper", TonemapperNames[(int)PP_Tonemapping->Tonemapper].c_str()))
 		{
 			for (int i = 0; i < 3; i++)
@@ -345,14 +389,6 @@ void Demo::OnDraw()
 
 		ImGui::End();
 	}
-
-#if !TEST_EXTERNAL
-	if (ImGui::Begin("Test Service Window"))
-	{
-		ImGui::Text("TESTING");
-		ImGui::End();
-	}
-#endif
 }
 
 void Demo::OnDrawGizmos()
@@ -366,14 +402,19 @@ void Demo::OnDrawGizmos()
 	Gizmos::Draw(GridMeshID, vec3(-GridSize, 0.0f, -GridSize), vec3(GridSize * 2.0f));
 #endif
 
-#if !TEST_EXTERNAL
-	Gizmos::SetColour(1, 0, 1, 1);
-	Gizmos::DrawWireSphere(vec3(0), 5.0f);
-#endif
-
-	for (auto& Light : Lights)
+#if CERBERUS
+	for (auto& Light : CerberusLights)
 	{
 		Gizmos::SetColour(Light.Component->Colour);
-		// Gizmos::DrawWireSphere(Light.Transform->Position, Light.Component->Radius);
+		Gizmos::DrawWireSphere(Light.Transform->Position, 1.0f);
 	}
+#endif
+
+#if SPONZA
+	for (auto& light : SponzaLights)
+	{
+		Gizmos::SetColour(light->Colour);
+		Gizmos::DrawWireSphere(light->GetTransform()->Position, 0.1f);
+	}
+#endif
 }

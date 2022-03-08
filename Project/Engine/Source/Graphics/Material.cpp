@@ -1,4 +1,5 @@
 #include <Engine/Log.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Graphics/Shader.hpp>
 #include <Engine/Graphics/Texture.hpp>
 #include <Engine/Graphics/Material.hpp>
@@ -7,18 +8,18 @@ using namespace std;
 using namespace Engine;
 using namespace Engine::Graphics;
 
-void BindTexture(unsigned int index, string shaderName, Texture* texture, Shader* shader)
+void BindTexture(unsigned int index, string shaderName, ResourceID& textureID, Shader* shader)
 {
 	shader->Set(shaderName, (int)index);
 	glActiveTexture(GL_TEXTURE0 + index);
 	
-	if (texture)
-		texture->Bind(index);
+	if (textureID != InvalidResourceID)
+		ResourceManager::Get<Texture>(textureID)->Bind(index);
 	else
 		glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Material::FillShader(Shader* shader) const
+void Material::FillShader(Shader* shader)
 {
 	if (!shader)
 		return;
@@ -32,11 +33,11 @@ void Material::FillShader(Shader* shader) const
 	shader->Set("material.TextureCoordScale", TextureCoordinateScale);
 	shader->Set("material.TextureCoordOffset", TextureCoordinateOffset);
 	
-	shader->Set("material.HasAlbedoMap", AlbedoMap != nullptr);
-	shader->Set("material.HasNormalMap", NormalMap != nullptr);
-	shader->Set("material.HasRoughnessMap", RoughnessMap != nullptr);
-	shader->Set("material.HasMetalnessMap", MetalnessMap != nullptr);
-	shader->Set("material.HasAmbientOcclusionMap", AmbientOcclusionMap != nullptr);
+	shader->Set("material.HasAlbedoMap", AlbedoMap != InvalidResourceID);
+	shader->Set("material.HasNormalMap", NormalMap != InvalidResourceID);
+	shader->Set("material.HasRoughnessMap", RoughnessMap != InvalidResourceID);
+	shader->Set("material.HasMetalnessMap", MetalnessMap != InvalidResourceID);
+	shader->Set("material.HasAmbientOcclusionMap", AmbientOcclusionMap != InvalidResourceID);
 
 	BindTexture(0, "material.AlbedoMap", AlbedoMap, shader);
 	BindTexture(1, "material.NormalMap", NormalMap, shader);
@@ -62,10 +63,12 @@ void Material::Serialize(DataStream& stream)
 	SerializeTexture(stream, AmbientOcclusionMap);
 }
 
-void Material::SerializeTexture(DataStream& stream, Texture*& texture)
+void Material::SerializeTexture(DataStream& stream, ResourceID& texture)
 {
-	string path = texture ? texture->GetPath() : "";
+	string name = texture ? ResourceManager::GetName(texture) : "";
+	string path = texture ? ResourceManager::Get<Texture>(texture)->GetPath() : "";
+	stream.Serialize(&name);
 	stream.Serialize(&path);
 	if (stream.IsReading() && !path.empty())
-		texture = new Texture(path);
+		texture = ResourceManager::LoadNamed<Texture>(name, path);
 }
