@@ -53,11 +53,15 @@ void TestService::OnDraw()
 		ImGui::Text("Control using arrow keys");
 		ImGui::Text("Control Radius:    Left / Right");
 		ImGui::Text("Control Intensity: Up   / Down");
-		ImGui::End();
 	}
+	ImGui::End();
 }
 
-void TestService::OnDrawGizmos() { }
+void TestService::OnDrawGizmos()
+{
+	Gizmos::SetColour(light->Colour);
+	Gizmos::DrawWireSphere(light->GetTransform()->Position, light->Radius);
+}
 
 void TestService::OnUpdate(float dt)
 {

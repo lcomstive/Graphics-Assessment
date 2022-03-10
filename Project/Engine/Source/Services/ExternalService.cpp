@@ -5,11 +5,19 @@
 #include <Engine/Services/ExternalService.hpp>
 
 #ifdef _WIN32
+// LoadLibrary, FreeLibrary, GetProcAddress
 #define WIN32_LEAN_AND_MEAN
-#include <windef.h>
+#include <windef.h> // Requirement for libloaderapi.h
 #include <libloaderapi.h>
+
+#define LOAD_SYMBOL GetProcAddress
+#define UNLOAD_LIB	FreeLibrary
 #else
-// Unix shared library loading library thingo
+// dlopen, dlclose, dlsym
+#include <dlfcn.h>
+
+#define LOAD_SYMBOL dlsym
+#define UNLOAD_LIB	dlclose
 #endif
 
 using namespace std;
@@ -33,6 +41,7 @@ CALL_INSTANCE_FN(OnDraw)
 CALL_INSTANCE_FN(OnStart)
 CALL_INSTANCE_FN(OnDrawGizmos)
 CALL_INSTANCE_FN_PARAM(OnResized, glm::ivec2, resolution)
+CALL_INSTANCE_FN_PARAM(OnPipelineChanged, Graphics::RenderPipeline*, pipeline)
 
 void ExternalServices::OnShutdown() { RemoveAll(); }
 
@@ -87,6 +96,8 @@ Service* ExternalServices::Add(string path)
 #endif
 
 	instance.Instance = Load(instance);
+	if (!instance.Instance)
+		return nullptr;
 
 #ifndef NDEBUG
 	instance.FileWatcher = new FileWatcher(path);
@@ -156,9 +167,13 @@ Service* ExternalServices::Reload(string path)
 
 Service* ExternalServices::Load(ServiceInstance& instance)
 {
+	// Load library
+	instance.NativeHandle =
 #if _WIN32
-	// Load .dll
-	instance.NativeHandle = LoadLibrary(wstring(instance.Path.begin(), instance.Path.end()).c_str());
+		LoadLibrary(wstring(instance.Path.begin(), instance.Path.end()).c_str());
+#else
+		dlopen(instance.Path.c_str(), RTLD_LAZY); // RTLD_LAZY only resolves symbols as they are referenced & executed (https://linux.die.net/man/3/dlopen)
+#endif
 	if (!instance.NativeHandle)
 	{
 		Log::Error("Failed to load service '" + instance.Path + "' - failed to load file");
@@ -166,11 +181,11 @@ Service* ExternalServices::Load(ServiceInstance& instance)
 	}
 
 	// Get pointer to function
-	CreateServiceFn pfnCreateService = (CreateServiceFn)GetProcAddress(instance.NativeHandle, "CreateExternalService");
+	CreateServiceFn pfnCreateService = (CreateServiceFn)LOAD_SYMBOL(instance.NativeHandle, "CreateExternalService");
 	if (!pfnCreateService)
 	{
 		Log::Error("Failed to load service '" + instance.Path + "' - entrypoint not found");
-		FreeLibrary(instance.NativeHandle);
+		UNLOAD_LIB(instance.NativeHandle);
 		return nullptr;
 	}
 
@@ -180,23 +195,16 @@ Service* ExternalServices::Load(ServiceInstance& instance)
 	if (!instance.Instance)
 	{
 		Log::Error("Failed to load service '" + instance.Path + "' - error during service creation");
-		FreeLibrary(instance.NativeHandle);
+		UNLOAD_LIB(instance.NativeHandle);
 		return nullptr;
 	}
-#else
-	// TODO: Unix support
-#endif
 
 	return instance.Instance;
 }
 
 void ExternalServices::Unload(ServiceInstance& instance)
 {
-#if _WIN32
-	FreeLibrary(instance.NativeHandle);
-#else
-	// TODO: Unix support
-#endif
+	UNLOAD_LIB(instance.NativeHandle);
 }
 
 void ExternalServices::RemoveAll()

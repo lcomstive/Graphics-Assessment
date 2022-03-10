@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <Engine/Api.hpp>
+#include <Engine/Types.hpp>
 #include <Engine/FileWatcher.hpp>
 
 namespace Engine::Graphics
@@ -14,13 +15,17 @@ namespace Engine::Graphics
 		std::string FragmentPath;
 		std::string ComputePath;
 		std::string GeometryPath;
+		std::string TessellationControl;
+		std::string TessellationEvaluate;
 
 		bool Empty()
 		{
 			return VertexPath.empty() &&
 				FragmentPath.empty() &&
 				ComputePath.empty() &&
-				GeometryPath.empty();
+				GeometryPath.empty() &&
+				TessellationControl.empty() &&
+				TessellationEvaluate.empty();
 		}
 	};
 
@@ -37,7 +42,7 @@ namespace Engine::Graphics
 		unsigned int m_Program;
 		ShaderStageInfo m_ShaderStages;
 		std::vector<ShaderUniform> m_Uniforms = { {} };
-		std::unordered_map<std::string, FileWatcher*> m_Watchers;
+		EngineUnorderedMap<std::string, FileWatcher*> m_Watchers;
 
 		void Destroy();
 		void CreateShaders();

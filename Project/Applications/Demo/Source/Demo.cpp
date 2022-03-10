@@ -7,9 +7,11 @@
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Services/SceneService.hpp>
-#include <Engine/Graphics/PostProcessing.hpp>
 #include <Engine/Services/ExternalService.hpp>
+#include <Engine/Graphics/Pipelines/Forward.hpp>
+#include <Engine/Graphics/Pipelines/Deferred.hpp>
 #include <Engine/Components/Physics/Rigidbody.hpp>
+#include <Engine/Graphics/Passes/PostProcessing.hpp>
 #include <Engine/Components/Physics/BoxCollider.hpp>
 #include <Engine/Components/Graphics/MeshRenderer.hpp>
 #include <Engine/Components/OrbitCameraController.hpp>
@@ -25,6 +27,7 @@ using namespace Engine::Physics;
 using namespace Engine::Services;
 using namespace Engine::Graphics;
 using namespace Engine::Components;
+using namespace Engine::Graphics::Pipelines;
 
 #if DRAW_GRID
 // Grid
@@ -33,6 +36,8 @@ const int GridSize = 250;
 #endif
 
 vector<GameObject*> CreatedObjects;
+
+bool DeferredRenderer = false;
 
 // Main Model
 #define CERBERUS	1
@@ -67,10 +72,10 @@ const string SponzaModelPath = "Models/Sponza/sponza.glb";
 #endif
 
 // Floor Texture
-const string FloorTexturePath = "Textures/Rock/Rock_044_BaseColor.jpg";
-const string FloorNormalMapPath = "Textures/Rock/Rock_044_Normal.jpg";
-const string FloorRoughnessMapPath = "Textures/Rock/Rock_044_Roughness.jpg";
-const string FloorHeightMapPath = "Textures/Rock/Rock_044_Height.jpg";
+const string FloorTexturePath = "Textures/Rusted Iron/rustediron2_basecolor.png";
+const string FloorNormalMapPath = "Textures/Rusted Iron/rustediron2_normal.png";
+const string FloorRoughnessMapPath = "Textures/Rusted Iron/rustediron2_roughness.png";
+const string FloorMetalnessMapPath = "Textures/Rusted Iron/rustediron2_metallic.png";
 Material FloorMaterial;
 
 // Post Processing
@@ -129,17 +134,10 @@ void Demo::OnStart()
 #endif
 
 	// Floor
-	FloorMaterial.AlbedoMap = ResourceManager::Load<Texture>(appDir + FloorTexturePath);
-	FloorMaterial.NormalMap = ResourceManager::Load<Texture>(appDir + FloorNormalMapPath);
-	FloorMaterial.RoughnessMap = ResourceManager::Load<Texture>(appDir + FloorRoughnessMapPath);
-
-	Log::Info("Adding tonemapping pass");
-
-	// Tonemapping
-	PP_Tonemapping = new TonemappingPass();
-	Renderer::GetPipeline()->AddPass(PP_Tonemapping->GetPipelinePass());
-
-	Log::Info("Settings up scene...");
+	FloorMaterial.AlbedoMap = ResourceManager::LoadNamed<Texture>("FloorAlbedo", appDir + FloorTexturePath);
+	FloorMaterial.NormalMap = ResourceManager::LoadNamed<Texture>("FloorNormal", appDir + FloorNormalMapPath);
+	FloorMaterial.RoughnessMap = ResourceManager::LoadNamed<Texture>("FloorRoughness", appDir + FloorRoughnessMapPath);
+	FloorMaterial.MetalnessMap = ResourceManager::LoadNamed<Texture>("FloorMetalness", appDir + FloorMetalnessMapPath);
 
 	// Create scene
 	ResetScene();
@@ -165,6 +163,16 @@ void Demo::OnShutdown()
 		delete go;
 }
 
+void Demo::OnPipelineChanged(RenderPipeline* pipeline)
+{
+	// Tonemapping
+	if (!PP_Tonemapping)
+		PP_Tonemapping = new TonemappingPass();
+
+	pipeline->AddPass(PP_Tonemapping->GetPipelinePass());
+	DeferredRenderer = typeid(*pipeline) == typeid(DeferredRenderPipeline);
+}
+
 void Demo::ResetScene()
 {
 	// Clean up any pre-existing resources
@@ -182,8 +190,8 @@ void Demo::ResetScene()
 	// Main Camera //
 	GameObject* cameraObj = new GameObject(scene, "Main Camera");
 	cameraObj->AddComponent<OrbitCameraController>();
-	cameraObj->GetTransform()->Position = { 0, 0, 0 };
-	cameraObj->GetTransform()->Rotation = { 0, radians(-90.0f), 0 }; // From euler angles
+	cameraObj->GetTransform()->Position = { 0, 5, 10 };
+	cameraObj->GetTransform()->Rotation = { radians(-30.0f), radians(-90.0f), 0 }; // From euler angles
 	CreatedObjects.emplace_back(cameraObj);
 
 #if CERBERUS
@@ -285,6 +293,8 @@ void Demo::ResetScene()
 #endif
 }
 
+float GridAlpha = 0.9f;
+
 void Demo::OnUpdate(float deltaTime)
 {
 	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
@@ -305,6 +315,14 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyDown(GLFW_KEY_LEFT))  lightMovement.x -= LightMoveSpeed * deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_RIGHT)) lightMovement.x += LightMoveSpeed * deltaTime;
 
+	if (Input::IsKeyDown(GLFW_KEY_MINUS)) GridAlpha -= deltaTime;
+	if (Input::IsKeyDown(GLFW_KEY_EQUAL)) GridAlpha += deltaTime;
+	GridAlpha = std::clamp(GridAlpha, 0.0f, 1.0f);
+
+	if (Input::IsKeyPressed(GLFW_KEY_Z)) Renderer::ToggleWireframe();
+	if (Input::IsKeyPressed(GLFW_KEY_F1)) Application::EnableGizmos(false);
+	if (Input::IsKeyPressed(GLFW_KEY_F2)) Application::EnableGizmos(true);
+
 #if CERBERUS
 	for (LightData data : CerberusLights)
 	{
@@ -320,6 +338,14 @@ void Demo::OnUpdate(float deltaTime)
 		light->GetTransform()->Position.z = sin(Renderer::GetTime() * 0.5f) * 7.5f;
 	}
 #endif
+
+	if (Input::IsKeyPressed(GLFW_KEY_TAB))
+	{
+		if (DeferredRenderer)
+			Renderer::SetPipeline<ForwardRenderPipeline>();
+		else
+			Renderer::SetPipeline<DeferredRenderPipeline>();
+	}
 }
 
 void Demo::OnDraw()
@@ -335,9 +361,8 @@ void Demo::OnDraw()
 		ImGui::Text("Q/E:		  Move camera up/down");
 		ImGui::Text("Right Mouse: Hold and move mouse to look around");
 		ImGui::Text("F11:		  Toggle fullscreen");
-
-		ImGui::End();
 	}
+	ImGui::End();
 
 	const ImVec4 ColourGood = { 1, 1, 1, 1 };
 	const ImVec4 ColourBad = { 1, 0, 0, 1 };
@@ -353,10 +378,13 @@ void Demo::OnDraw()
 		float lastTimeStep = physicsSystem.LastTimestep().count();
 		float desiredTimestep = physicsSystem.Timestep().count();
 
+		ImGui::Text("GRID ALPHA: %.2f", GridAlpha);
+
 		ImGui::Text("FPS: %f\n", Renderer::GetFPS());
 		ImGui::Text("Total Objects: %i", (int)CreatedObjects.size());
 		ImGui::Text("Transforms: %i", (int)transforms.size());
 		ImGui::Text("Lights: %i", (int)totalLights.size());
+		ImGui::Text("Render Type: %s", DeferredRenderer ? "Deferred" : "Forward");
 		ImGui::TextColored(
 			(frameTime < (1000.0f / 30.0f)) ? ColourGood : ColourBad,
 			"Render  Frame Time: %.1fms",
@@ -370,25 +398,30 @@ void Demo::OnDraw()
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
 		ImGui::Text("Samples: %d", Renderer::GetSamples());
 
-		static string TonemapperNames[] = { "None", "Aces", "Reinhard" };
-		if (ImGui::BeginCombo("Tonemapper", TonemapperNames[(int)PP_Tonemapping->Tonemapper].c_str()))
+		static const char* TonemapperNames[] = { "None", "Aces", "Reinhard" };
+		if (ImGui::BeginCombo("Tonemapper", TonemapperNames[(int)PP_Tonemapping->Tonemapper]))
 		{
 			for (int i = 0; i < 3; i++)
-				if (ImGui::Selectable(TonemapperNames[i].c_str(), (int)PP_Tonemapping->Tonemapper == i))
+				if (ImGui::Selectable(TonemapperNames[i], (int)PP_Tonemapping->Tonemapper == i))
 					PP_Tonemapping->Tonemapper = (Tonemapper)i;
-			ImGui::EndCombo();
+				ImGui::EndCombo();
 		}
 		ImGui::DragFloat("Gamma", &PP_Tonemapping->Gamma, 0.05f, 1.0f, 3.0f);
-		ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
+			ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
 
-		if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
-			ImGui::Text("PHYSICS PAUSED");
+			if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
+				ImGui::Text("PHYSICS PAUSED");
 
 		if (ImGui::Button("Reload External Service"))
 			Application::GetService<ExternalServices>()->Reload(Application::AssetDir + ExternalServicePath);
-
-		ImGui::End();
 	}
+	ImGui::End();
+
+	ImGui::Begin("Services");
+	auto& services = Application::GetAllServices();
+	for (Service* service : services)
+		ImGui::Text(" - %s", typeid(*service).name());
+	ImGui::End();
 }
 
 void Demo::OnDrawGizmos()
@@ -398,11 +431,23 @@ void Demo::OnDrawGizmos()
 	if (GridMeshID == InvalidResourceID)
 		GridMeshID = Mesh::Grid(GridSize);
 
-	Gizmos::SetColour(1, 1, 1, 0.2f);
+	Gizmos::SetColour(1, 1, 1, GridAlpha);
 	Gizmos::Draw(GridMeshID, vec3(-GridSize, 0.0f, -GridSize), vec3(GridSize * 2.0f));
+
+	Gizmos::SetColour(1, 0, 0, GridAlpha);
+	Gizmos::SetLineWidth(3.0f);
+	Gizmos::DrawLine({ -GridSize, 0, 0 }, { GridSize, 0, 0 });
+
+	Gizmos::SetColour(0, 0, 1, GridAlpha);
+	Gizmos::DrawLine({ 0, 0, -GridSize }, { 0, 0, GridSize });
+
+	Gizmos::SetColour(0, 1, 0, GridAlpha);
+	Gizmos::DrawLine({ 0, 0, 0 }, { 0, 0.5f, 0 });
+
+	Gizmos::SetLineWidth(1.0f);
 #endif
 
-#if CERBERUS
+#if CERBERUS && 0
 	for (auto& Light : CerberusLights)
 	{
 		Gizmos::SetColour(Light.Component->Colour);

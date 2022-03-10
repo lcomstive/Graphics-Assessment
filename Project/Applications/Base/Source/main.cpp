@@ -40,6 +40,13 @@ int main()
 {
 	string gameLogicFile = Application::AssetDir + DefaultGameLogicFile;
 
+	gameLogicFile = Application::AssetDir + "Services/Demo";
+#if defined(_WIN32)
+	gameLogicFile += ".dll";
+#else
+	gameLogicFile += ".so";
+#endif
+
 	BaseApp app(AppArgs, gameLogicFile);
 	app.Run();
 	return 0;

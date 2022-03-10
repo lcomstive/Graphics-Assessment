@@ -1,8 +1,8 @@
 #pragma once
 #include <typeindex>
-#include <unordered_map>
 #include <Engine/Api.hpp>
 #include <Engine/Log.hpp>
+#include <Engine/Types.hpp>
 #include <Engine/ResourceID.hpp>
 
 namespace Engine
@@ -21,8 +21,8 @@ namespace Engine
 			std::type_index Type;
 		};
 
-		std::unordered_map<ResourceID, ResourceInstance> m_Instances;
-		std::unordered_map<std::string, ResourceID> m_NamedInstances; // Name -> ResourceID
+		EngineUnorderedMap<ResourceID, ResourceInstance> m_Instances;
+		EngineUnorderedMap<EngineString, ResourceID> m_NamedInstances; // Name -> ResourceID
 
 		ResourceManager();
 		~ResourceManager();

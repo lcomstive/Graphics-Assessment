@@ -23,7 +23,8 @@ namespace Engine::Graphics
 			TriangleStrip	= GL_TRIANGLE_STRIP,
 			TriangleFan		= GL_TRIANGLE_FAN,
 			Quads			= GL_QUADS,
-			QuadStrip		= GL_QUAD_STRIP
+			QuadStrip		= GL_QUAD_STRIP,
+			Patches			= GL_PATCHES
 		};
 
 		struct ENGINE_API Vertex

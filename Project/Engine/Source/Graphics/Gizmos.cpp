@@ -27,6 +27,7 @@ Gizmos::~Gizmos()
 		s_Instance = nullptr;
 }
 
+void Gizmos::SetLineWidth(float width) { s_Instance->m_LineWidth = width; }
 void Gizmos::SetColour(glm::vec3 colour) { s_Instance->m_Material.Albedo = vec4(colour.r, colour.g, colour.b, 1.0f); }
 void Gizmos::SetColour(glm::vec4 colour) { s_Instance->m_Material.Albedo = colour; }
 void Gizmos::SetColour(float r, float g, float b, float a) { s_Instance->m_Material.Albedo = { r, g, b, a }; }
@@ -40,7 +41,8 @@ void Gizmos::Draw(ResourceID& mesh, glm::vec3 position, glm::vec3 scale, glm::ve
 			s_Instance->m_Material,
 			position,
 			scale,
-			eulerAngleXYZ(rotation.x, rotation.y, rotation.z)
+			eulerAngleXYZ(rotation.x, rotation.y, rotation.z),
+			s_Instance->m_LineWidth
 		});
 }
 
@@ -93,7 +95,8 @@ void Gizmos::DrawWireQuad(vec3 position, vec2 scale, mat4 rotation)
 			s_Instance->m_Material,
 			position,
 			{ scale.x, scale.y, 1 },
-			rotation
+			rotation,
+			s_Instance->m_LineWidth
 		});
 }
 
@@ -107,14 +110,23 @@ void Gizmos::DrawWireCube(vec3 position, vec3 scale, mat4 rotation)
 			s_Instance->m_Material,
 			position,
 			scale,
-			rotation
+			rotation,
+			s_Instance->m_LineWidth
 		});
 }
 
 void Gizmos::DrawWireSphere(vec3 position, float radius)
 {
 	s_Instance->m_Material.Wireframe = true;
-	Renderer::Submit(DrawCall{ Mesh::Sphere(), s_Instance->m_Material, position, { radius, radius, radius } });
+	Renderer::Submit(DrawCall
+		{
+			Mesh::Sphere(),
+			s_Instance->m_Material,
+			position,
+			{ radius, radius, radius },
+			mat4(1.0f),
+			s_Instance->m_LineWidth
+		});
 }
 
 void Gizmos::DrawLine(vec3 start, vec3 end)
@@ -131,7 +143,8 @@ void Gizmos::DrawLine(vec3 start, vec3 end)
 			vec3(0),
 			vec3 { 1, 1, 1 },
 			mat4(1.0f),
-			true // Delete mesh after rendered
+			s_Instance->m_LineWidth,
+			true  // Delete mesh after rendered
 		});
 }
 
@@ -146,7 +159,8 @@ void Gizmos::DrawGrid(glm::vec3 position, unsigned int gridSize, glm::vec3 scale
 			position,
 			scale,
 			eulerAngleXYZ(rotation.x, rotation.y, rotation.z),
-			true // Delete mesh after draw
+			s_Instance->m_LineWidth,
+			true  // Delete mesh after draw
 		});
 }
 

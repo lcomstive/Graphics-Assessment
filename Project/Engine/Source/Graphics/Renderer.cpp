@@ -25,10 +25,28 @@ Renderer::Renderer() :
 	m_Resolution(0),
 	m_Wireframe(false),
 	m_Pipeline(nullptr),
-	m_MainCamera(nullptr)
+	m_MainCamera(nullptr),
+	m_SupportsTessellation(false)
 {
 	if (!s_Instance)
 		s_Instance = this;
+	
+	// Check for tessellation support
+	// OpenGL 4.0+ is required
+	if (GLVersion.major >= 4)
+	{
+		GLint maxPatchVertices = 0;
+		glGetIntegerv(GL_MAX_PATCH_VERTICES, &maxPatchVertices);
+
+		m_SupportsTessellation = maxPatchVertices >= 3;
+		m_SupportsTessellation = false;
+
+		if (m_SupportsTessellation)
+		{
+			Log::Debug("Setting up tessellation with patch vertices: 3 (max " + to_string(maxPatchVertices) + ")");
+			glPatchParameteri(GL_PATCH_VERTICES, 3);
+		}
+	}
 }
 
 Renderer::~Renderer()
@@ -37,6 +55,7 @@ Renderer::~Renderer()
 		s_Instance = nullptr;
 }
 
+void Renderer::ToggleWireframe() { SetWireframe(!s_Instance->m_Wireframe); }
 void Renderer::SetVSync(bool vsync) { glfwSwapInterval(s_Instance->m_VSync = vsync ? 1 : 0); }
 void Renderer::SetWireframe(bool wireframe) { glPolygonMode(GL_FRONT_AND_BACK, (s_Instance->m_Wireframe = wireframe) ? GL_LINE : GL_FILL); }
 
@@ -50,6 +69,7 @@ bool Renderer::GetWireframeMode() { return s_Instance->m_Wireframe; }
 Camera* Renderer::GetMainCamera() { return s_Instance->m_MainCamera; }
 RenderPipeline* Renderer::GetPipeline() { return s_Instance->m_Pipeline; }
 void Renderer::SetMainCamera(Camera* camera) { s_Instance->m_MainCamera = camera; }
+bool Renderer::SupportsTessellation() { return s_Instance->m_SupportsTessellation; }
 
 void Renderer::Shutdown()
 {
@@ -77,6 +97,8 @@ void Renderer::Draw(DrawArgs args)
 	SortDrawQueue(args.DrawSorting);
 	Shader* shader = s_Instance->m_Pipeline->CurrentShader();
 
+	glPolygonMode(GL_FRONT_AND_BACK, s_Instance->m_Wireframe ? GL_LINE : GL_FILL);
+
 	for (DrawCall& drawCall : s_Instance->m_DrawQueue)
 	{
 		if (drawCall.Mesh == InvalidResourceID)
@@ -98,13 +120,21 @@ void Renderer::Draw(DrawArgs args)
 		// Fill material values
 		drawCall.Material.FillShader(shader);
 
-		Renderer::SetWireframe(drawCall.Material.Wireframe);
+		glLineWidth(drawCall.LineWidth);		
+
+		if(drawCall.Material.Wireframe && !s_Instance->m_Wireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		mesh->Draw();
+
+		if(drawCall.Material.Wireframe && !s_Instance->m_Wireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		if (drawCall.DeleteMeshAfterRender)
 			ResourceManager::Unload(drawCall.Mesh);
 	}
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	if (args.ClearQueue)
 		ClearDrawQueue();

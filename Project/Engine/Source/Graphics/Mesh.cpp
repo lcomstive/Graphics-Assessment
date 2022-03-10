@@ -3,6 +3,7 @@
 #include <Engine/Graphics/Mesh.hpp>
 #include <Engine/Graphics/Model.hpp>
 #include <Engine/ResourceManager.hpp>
+#include <Engine/Graphics/Renderer.hpp>
 
 using namespace glm;
 using namespace std;
@@ -100,11 +101,15 @@ void Mesh::Draw()
 	if (!m_Setup)
 		Setup();
 
+	GLenum drawMode = (GLenum)m_DrawMode;
+	if (!Renderer::GetPipeline()->CurrentShader()->GetStages().TessellationEvaluate.empty())
+		drawMode = GL_PATCHES;
+
 	glBindVertexArray(m_VAO);
 	if (m_Indices.size() > 0)
-		glDrawElements((GLenum)m_DrawMode, (GLsizei)m_Indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(drawMode, (GLsizei)m_Indices.size(), GL_UNSIGNED_INT, 0);
 	else
-		glDrawArrays((GLenum)m_DrawMode, 0, (GLint)m_Vertices.size());
+		glDrawArrays(drawMode, 0, (GLint)m_Vertices.size());
 	glBindVertexArray(0);
 }
 

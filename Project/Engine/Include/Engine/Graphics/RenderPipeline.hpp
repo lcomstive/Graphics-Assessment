@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 #include <Engine/Api.hpp>
+#include <Engine/ResourceID.hpp>
 #include <Engine/Components/Camera.hpp>
 
 #define MAX_LIGHTS 100
@@ -13,7 +14,7 @@ namespace Engine::Graphics
 
 	struct ENGINE_API RenderPipelinePass
 	{
-		Shader* Shader = nullptr;
+		ResourceID Shader = InvalidResourceID;
 		Framebuffer* Pass = nullptr;
 		std::function<void(Framebuffer* previous)> DrawCallback = nullptr;
 		bool ResizeWithScreen = true;
@@ -27,10 +28,16 @@ namespace Engine::Graphics
 		std::vector<RenderPipelinePass> m_RenderPasses;
 
 	public:
+		virtual ~RenderPipeline() { }
+
 		void Draw(Engine::Components::Camera& camera);
 
 		/// <returns>The texture of the last render pass' output</returns>
 		RenderTexture* GetOutputAttachment(unsigned int index = 0);
+
+		Framebuffer* GetPassAt(unsigned int index);
+		RenderPipelinePass& GetRenderPassAt(unsigned int index);
+		std::vector<RenderPipelinePass>& GetAllRenderPasses();
 
 		virtual void RemovePass(Framebuffer* pass);
 		virtual void AddPass(RenderPipelinePass& passInfo);

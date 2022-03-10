@@ -1,5 +1,5 @@
 #version 330 core
-#include "ASSET_DIR/Shaders/Include/Camera.inc"
+#include "#ASSET_DIR/Shaders/Include/Camera.inc"
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normals;

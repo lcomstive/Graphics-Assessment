@@ -7,6 +7,7 @@ namespace Engine::Graphics::Pipelines
 	class DeferredRenderPipeline : public RenderPipeline
 	{
 		Framebuffer *m_MeshPass, *m_LightingPass, *m_ForwardPass;
+		ResourceID m_MeshShader, m_LightingShader, m_ForwardShader;
 
 		void MeshPass(Framebuffer* previous);
 		void ForwardPass(Framebuffer* previous);

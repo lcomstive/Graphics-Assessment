@@ -16,13 +16,7 @@ project "Application Base"
 	includedirs
 	{
 		"Include",
-		"%{IncludeDir.STB}",
-		"%{IncludeDir.GLM}",
-		"%{IncludeDir.Glad}",
-		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGUI}",
-		"%{IncludeDir.Assimp}",
-		"%{IncludeDir.termcolor}",
+		IncludeDir,
 		"%{wks.location}/../Engine/Include"
 	}
 

@@ -38,3 +38,6 @@
 [submodule "Project/Dependencies/termcolor"]
 	path = Project/Dependencies/termcolor
 	url = https://github.com/ikalnytskyi/termcolor.git
+[submodule "Project/Dependencies/robin-hood-hashing"]
+	path = Project/Dependencies/robin-hood-hashing
+	url = https://github.com/martinus/robin-hood-hashing.git

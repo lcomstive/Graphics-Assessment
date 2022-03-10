@@ -21,13 +21,7 @@ project "Engine"
 	includedirs
 	{
 		"Include",
-		"%{IncludeDir.STB}",
-		"%{IncludeDir.GLM}",
-		"%{IncludeDir.Glad}",
-		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGUI}",
-		"%{IncludeDir.Assimp}",
-		"%{IncludeDir.termcolor}"
+		IncludeDir
 	}
 
 	links

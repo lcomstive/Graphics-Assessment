@@ -9,32 +9,14 @@
 #include <Engine/FileWatcher.hpp>
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/Shader.hpp>
+#include <Engine/Graphics/Renderer.hpp>
 
 using namespace glm;
 using namespace std;
 using namespace Engine;
 using namespace Engine::Graphics;
 
-// Replace all instances of '#include "<path>"' with contents of file at path
-void ProcessIncludeFiles(string& text)
-{
-	// regex expression for pattern to be searched
-	regex regexp("\\#include\\s+\\\"(.*)\\\"");
-	smatch match;
-
-	// regex_search that searches pattern regexp in the string mystr
-	while (regex_search(text, match, regexp))
-	{
-		// match.str(0) is the entire captured string
-		// match.str(1) is first capture group, in this case filename
-
-		text = text.replace(
-			match.prefix().length(),
-			match.length(),
-			ReadText(match.str(1))
-		);
-	}
-}
+const unsigned int MaxIncludeRecursion = 5;
 
 void ReplaceAll(string& text, string search, string replacement)
 {
@@ -51,6 +33,35 @@ void ReplaceAll(string& text, string search, string replacement)
 		);
 }
 
+// Replace all instances of '#include "<path>"' with contents of file at path
+void ProcessIncludeFiles(string& text, unsigned int recursions)
+{
+	if (recursions <= 0)
+		return;
+
+	ReplaceAll(text, "#ASSET_DIR", Application::AssetDir);
+
+	// regex expression for pattern to be searched
+	regex regexp("\\#include\\s+\\\"(.*)\\\"");
+	smatch match;
+
+	// regex_search that searches pattern regexp in the string mystr
+	while (regex_search(text, match, regexp))
+	{
+		// match.str(0) is the entire captured string
+		// match.str(1) is first capture group, in this case filename
+
+		string includeText = ReadText(match.str(1));
+		ProcessIncludeFiles(includeText, recursions - 1);
+
+		text = text.replace(
+			match.prefix().length(),
+			match.length(),
+			includeText
+		);
+	}
+}
+
 // Create a shader from source code
 unsigned int Shader::CreateShader(const string& source, const unsigned int type)
 {
@@ -65,8 +76,8 @@ unsigned int Shader::CreateShader(const string& source, const unsigned int type)
 	if (readSource.empty())
 		return GL_INVALID_VALUE;
 
-	ReplaceAll(readSource, "ASSET_DIR", Application::AssetDir);
-	ProcessIncludeFiles(readSource);
+	ProcessIncludeFiles(readSource, MaxIncludeRecursion);
+	ReplaceAll(readSource, "#SUPPORTS_TESSELLATION", Renderer::SupportsTessellation() ? "1" : "0");
 
 	const char* sourceRaw = readSource.c_str();
 	glShaderSource(shader, 1, &sourceRaw, nullptr);
@@ -145,7 +156,9 @@ void Shader::UpdateStages(ShaderStageInfo stageInfo)
 	if (stageInfo.VertexPath.compare(m_ShaderStages.VertexPath) == 0 &&
 		stageInfo.FragmentPath.compare(m_ShaderStages.FragmentPath) == 0 &&
 		stageInfo.GeometryPath.compare(m_ShaderStages.GeometryPath) == 0 &&
-		stageInfo.ComputePath.compare(m_ShaderStages.ComputePath) == 0)
+		stageInfo.ComputePath.compare(m_ShaderStages.ComputePath) == 0 &&
+		stageInfo.TessellationControl.compare(m_ShaderStages.TessellationControl) == 0 &&
+		stageInfo.TessellationEvaluate.compare(m_ShaderStages.TessellationEvaluate) == 0)
 		return;
 
 	// Unwatch shaders
@@ -153,6 +166,8 @@ void Shader::UpdateStages(ShaderStageInfo stageInfo)
 	WatchShader(m_ShaderStages.FragmentPath, false);
 	WatchShader(m_ShaderStages.GeometryPath, false);
 	WatchShader(m_ShaderStages.ComputePath, false);
+	WatchShader(m_ShaderStages.TessellationControl, false);
+	WatchShader(m_ShaderStages.TessellationEvaluate, false);
 
 	// Update & create new shaders
 	m_IsDirty = true;
@@ -179,7 +194,9 @@ void Shader::CreateShaders()
 		CreateShader(m_ShaderStages.VertexPath, GL_VERTEX_SHADER),
 		CreateShader(m_ShaderStages.FragmentPath, GL_FRAGMENT_SHADER),
 		CreateShader(m_ShaderStages.ComputePath, GL_COMPUTE_SHADER),
-		CreateShader(m_ShaderStages.GeometryPath, GL_GEOMETRY_SHADER)
+		CreateShader(m_ShaderStages.GeometryPath, GL_GEOMETRY_SHADER),
+		CreateShader(m_ShaderStages.TessellationControl, GL_TESS_CONTROL_SHADER),
+		CreateShader(m_ShaderStages.TessellationEvaluate, GL_TESS_EVALUATION_SHADER)
 	};
 
 	// Debug info
@@ -188,11 +205,15 @@ void Shader::CreateShaders()
 	if (!m_ShaderStages.FragmentPath.empty()) Log::Debug("  Fragment: " + m_ShaderStages.FragmentPath);
 	if (!m_ShaderStages.ComputePath.empty())  Log::Debug("  Compute:  " + m_ShaderStages.ComputePath);
 	if (!m_ShaderStages.GeometryPath.empty()) Log::Debug("  Geometry: " + m_ShaderStages.GeometryPath);
+	if (!m_ShaderStages.GeometryPath.empty()) Log::Debug("  Tess Control: " + m_ShaderStages.TessellationControl);
+	if (!m_ShaderStages.GeometryPath.empty()) Log::Debug("  Tess Eval: " + m_ShaderStages.TessellationEvaluate);
 
 	WatchShader(m_ShaderStages.VertexPath);
 	WatchShader(m_ShaderStages.FragmentPath);
 	WatchShader(m_ShaderStages.GeometryPath);
 	WatchShader(m_ShaderStages.ComputePath);
+	WatchShader(m_ShaderStages.TessellationControl);
+	WatchShader(m_ShaderStages.TessellationEvaluate);
 
 	const bool invalidShaders = shaders.size() == 0 || shaders[0] == GL_INVALID_VALUE || shaders[1] == GL_INVALID_VALUE;
 	programID = invalidShaders ? GL_INVALID_VALUE : glCreateProgram();

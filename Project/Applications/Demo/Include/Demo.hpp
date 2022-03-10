@@ -11,6 +11,8 @@ protected:
 	void OnDrawGizmos() override;
 	void OnUpdate(float deltaTime) override;
 
+	void OnPipelineChanged(Engine::Graphics::RenderPipeline* pipeline) override;
+
 	void ResetScene();
 };
 

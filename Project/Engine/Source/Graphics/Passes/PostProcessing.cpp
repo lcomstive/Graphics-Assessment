@@ -3,7 +3,7 @@
 #include <Engine/ResourceManager.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
-#include <Engine/Graphics/PostProcessing.hpp>
+#include <Engine/Graphics/Passes/PostProcessing.hpp>
 
 using namespace std;
 using namespace Engine;
@@ -19,24 +19,29 @@ FullscreenEffectPass::FullscreenEffectPass(std::string fragmentShaderPath)
 	specs.Attachments = { { TextureFormat::RGBA16F, TexturePixelType::Float } };
 	m_Pass.Pass = new Framebuffer(specs);
 
-	m_Pass.Shader = new Shader({
-		Application::AssetDir + FullscreenVertexShader,
-		Application::AssetDir + fragmentShaderPath
-	});
+	m_Pass.Shader = ResourceManager::LoadNamed<Shader>("Shaders/Fullscreen/" + fragmentShaderPath,
+		ShaderStageInfo
+		{
+			Application::AssetDir + FullscreenVertexShader,
+			Application::AssetDir + fragmentShaderPath
+		});
 	m_Pass.DrawCallback = bind(&FullscreenEffectPass::DrawCallback, this, ::placeholders::_1);
+
+	m_Shader = ResourceManager::Get<Shader>(m_Pass.Shader);
 }
 
 FullscreenEffectPass::~FullscreenEffectPass()
 {
 	delete m_Pass.Pass;
-	delete m_Pass.Shader;
+	ResourceManager::Unload(m_Pass.Shader);
 }
 
 void FullscreenEffectPass::DrawCallback(Framebuffer* previous)
 {
 	previous->GetColourAttachment()->Bind();
-	m_Pass.Shader->Set("inputTexture", 0);
-	OnDraw(m_Pass.Shader);
+	if(m_Shader)
+		m_Shader->Set("inputTexture", 0);
+	OnDraw(m_Shader);
 
 	// DRAW FULLSCREEN QUAD //
 	ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
@@ -51,6 +56,9 @@ TonemappingPass::TonemappingPass() : FullscreenEffectPass(TonemappingShader) { }
 
 void TonemappingPass::OnDraw(Shader* shader)
 {
+	if (!shader)
+		return;
+
 	shader->Set("gamma", Gamma);
 	shader->Set("exposure", Exposure);
 	shader->Set("tonemapper", (int)Tonemapper);

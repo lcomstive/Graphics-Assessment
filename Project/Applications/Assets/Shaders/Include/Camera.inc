@@ -1,3 +1,5 @@
+#ifndef _INCLUDE_CAMERA_
+#define _INCLUDE_CAMERA_
 struct Camera
 {
 	vec3 Position;
@@ -6,3 +8,5 @@ struct Camera
 };
 
 uniform Camera camera;
+
+#endif

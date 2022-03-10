@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <chrono>
+#include <imgui.h>			// Immediate Mode UI Library
 #include <glm/glm.hpp>		// Maths library
 #include <glad/glad.h>		// Modern OpenGL loader
 #include <GLFW/glfw3.h>		// Window & input handling
@@ -8,8 +9,8 @@
 #include <Engine/Api.hpp>	// For API exporting
 #include <Engine/Input.hpp> // Handles keyboard & mouse input
 #include <Engine/Scene.hpp> // Holds game objects & state
-#include <imgui.h>			// Immediate Mode UI Library
 
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Services/Service.hpp>
 
 using namespace std::chrono_literals; // seconds in literal
@@ -62,16 +63,16 @@ namespace Engine
 	enum class ENGINE_API ApplicationState { Starting, Running, Stopping };
 	class Application
 	{
+		// Instances //
 		Input* m_Input;
 		ApplicationState m_State;
 		Graphics::Gizmos* m_Gizmos;
-		void* m_ImGUIContext = nullptr;
 		GLADloadproc m_GladProc = nullptr;
 		Graphics::Renderer* m_Renderer;
 		ImGuiContext* m_ImGuiContext = nullptr;
 		ResourceManager* m_ResourceManager = nullptr;
 
-		std::unordered_map<std::type_index, Services::Service*> m_Services = {};
+		ENGINE_API static Application* s_Instance;
 
 	public:
 		/// <summary>
@@ -115,9 +116,13 @@ namespace Engine
 		/// </summary>
 		ENGINE_EXPORT static void SetFullscreen(bool fullscreen) { s_Instance->_SetFullscreen(fullscreen); }
 
+		ENGINE_API static void EnableGizmos(bool enable = true);
+
 		ENGINE_API static void ShowMouse(bool show);
 
 		ENGINE_API static ApplicationState GetState();
+
+		ENGINE_API static std::vector<Services::Service*> GetAllServices();
 
 		template<typename T>
 		ENGINE_EXPORT static T* AddService() { return s_Instance->_AddService<T>(); }
@@ -136,13 +141,12 @@ namespace Engine
 	private:
 		GLFWwindow* m_Window;
 		ApplicationArgs m_Args;
+		EngineUnorderedMap<std::type_index, Services::Service*> m_Services = {};
 
 		// Cache windowed resolution, for when coming out of fullscreen mode
 		glm::ivec2 m_WindowedResolution;
 
-		ENGINE_API static Application* s_Instance;
-
-		void SetupGizmos();
+		void StyleImGUI();
 		void CreateAppWindow();
 
 		// Functions starting with _ are to be declared statically and accessed through s_Instance
@@ -178,7 +182,11 @@ namespace Engine
 			T* service = new T();
 			m_Services.emplace(type, (Services::Service*)service);
 			if (m_State == ApplicationState::Running)
-				((Services::Service*)service)->OnStart();
+			{
+				Services::Service* base = (Services::Service*)service;
+				base->OnStart();
+				base->OnPipelineChanged(Renderer::GetPipeline());
+			}
 			return service;
 		}
 

@@ -1,3 +1,6 @@
+#ifndef _INCLUDE_TONEMAP_
+#define _INCLUDE_TONEMAP_
+
 uniform float gamma = 2.2;
 uniform float exposure = 1.0;
 
@@ -16,3 +19,5 @@ vec3 AcesTonemap(vec3 x)
 	const float e = 0.14;
 	return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
+
+#endif

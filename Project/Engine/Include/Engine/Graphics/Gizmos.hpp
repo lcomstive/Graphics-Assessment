@@ -14,6 +14,7 @@ namespace Engine::Graphics
 	class Gizmos
 	{
 		Material m_Material;
+		float m_LineWidth = 1.0f;
 
 		static Gizmos* s_Instance;
 
@@ -23,6 +24,7 @@ namespace Engine::Graphics
 		friend class Application;
 
 	public:
+		ENGINE_API static void SetLineWidth(float width);
 		ENGINE_API static void SetColour(glm::vec3 colour);
 		ENGINE_API static void SetColour(glm::vec4 colour);
 		ENGINE_API static void SetColour(float r, float g, float b, float a = 1.0f);

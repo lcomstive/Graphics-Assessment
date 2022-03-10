@@ -12,13 +12,7 @@ function CreateEngineService(name, copyToOutput)
 	
 	includedirs
 	{
-		"%{IncludeDir.STB}",
-		"%{IncludeDir.GLM}",
-		"%{IncludeDir.Glad}",
-		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.ImGUI}",
-		"%{IncludeDir.Assimp}",
-		"%{IncludeDir.termcolor}",
+		IncludeDir,
 		"%{wks.location}/../Engine/Include"
 	}
 
@@ -50,7 +44,7 @@ function CreateEngineService(name, copyToOutput)
 			postbuildcommands
 			{
 				"{MKDIR} \"%{wks.location}../Applications/Assets/Services/\" >nul",
-				"{COPYFILE} \"" .. OutputDir .. "%{prj.name}/%{prj.name}" .. fileExt .. "\" \"%{wks.location}../Applications/Assets/Services/%{prj.name}\""
+				"{COPYFILE} \"" .. OutputDir .. "%{prj.name}/%{prj.name}" .. fileExt .. "\" \"%{wks.location}../Applications/Assets/Services/%{prj.name}" .. fileExt .. "\""
 			}
 		end
 
@@ -63,7 +57,7 @@ function CreateEngineService(name, copyToOutput)
 			postbuildcommands
 			{
 				"{MKDIR} \"" .. OutputDir .. "Binaries/Assets/Services/\" >nul",
-				"{COPYFILE} \"" .. OutputDir .. "%{prj.name}/%{prj.name}" .. fileExt .. "\" \"" .. OutputDir .. "Binaries/Assets/Services/%{prj.name}\""
+				"{COPYFILE} \"" .. OutputDir .. "%{prj.name}/%{prj.name}" .. fileExt .. "\" \"" .. OutputDir .. "Binaries/Assets/Services/%{prj.name}" .. fileExt .. "\""
 			}
 		end
 

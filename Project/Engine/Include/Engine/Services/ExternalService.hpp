@@ -2,8 +2,8 @@
 #include <queue>
 #include <string>
 #include <imgui.h>
-#include <unordered_map>
 #include <Engine/Api.hpp>
+#include <Engine/Types.hpp>
 #include <Engine/Application.hpp>
 #include <Engine/Services/Service.hpp>
 
@@ -34,6 +34,7 @@ namespace Engine::Services
 		ENGINE_API virtual void OnDrawGizmos() override;
 
 		ENGINE_API virtual void OnResized(glm::ivec2 resolution) override;
+		ENGINE_API virtual void OnPipelineChanged(Graphics::RenderPipeline* pipeline) override;
 
 		ENGINE_API Service* Add(std::string path);
 		ENGINE_API void Remove(std::string path);
@@ -60,7 +61,7 @@ namespace Engine::Services
 #endif
 		};
 
-		std::unordered_map<std::string, ServiceInstance> m_Instances;
+		EngineUnorderedMap<std::string, ServiceInstance> m_Instances;
 
 		/// <summary>
 		/// Loads shared library from file

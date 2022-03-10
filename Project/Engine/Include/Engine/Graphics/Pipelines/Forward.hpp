@@ -6,6 +6,7 @@ namespace Engine::Graphics::Pipelines
 {
 	class ForwardRenderPipeline : public RenderPipeline
 	{
+		ResourceID m_ForwardShader = InvalidResourceID;
 		Framebuffer* m_ForwardPass = nullptr;
 
 		void ForwardPass(Framebuffer* previous);

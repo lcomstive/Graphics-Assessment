@@ -1,10 +1,8 @@
 #version 330 core
-#include "ASSET_DIR/Shaders/Include/Camera.inc"
-#include "ASSET_DIR/Shaders/Include/Light.inc"
-#include "ASSET_DIR/Shaders/Include/Material.inc"
-#include "ASSET_DIR/Shaders/Include/PBR.inc"
+#include "#ASSET_DIR/Shaders/Include/Material.inc"
+#include "#ASSET_DIR/Shaders/Include/PBR.inc"
 
-out vec4 fragColour;
+out vec4 FragColour;
 
 in vec2 TexCoords;
 
@@ -26,5 +24,5 @@ void main()
 	input.WorldPos = positionRoughness.rgb;
 	input.Roughness = positionRoughness.a;
 
-	fragColour = vec4(PBRLighting(input), 1.0);
+	FragColour = vec4(PBRLighting(input), 1.0);
 }

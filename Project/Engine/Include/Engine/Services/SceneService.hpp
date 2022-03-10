@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <Engine/Scene.hpp>
+#include <Engine/Types.hpp>
 #include <Engine/Services/Service.hpp>
 
 namespace Engine::Services
@@ -30,7 +31,7 @@ namespace Engine::Services
 		};
 
 		Scene* m_Current = nullptr;
-		std::unordered_map<std::string, SceneState> m_Scenes;
+		EngineUnorderedMap<std::string, SceneState> m_Scenes;
 
 		void SelectActiveScene();
 	};

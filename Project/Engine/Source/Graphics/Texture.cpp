@@ -14,7 +14,7 @@ Texture::Texture(string path, bool hdr) : m_Path(path), m_ID(GL_INVALID_VALUE), 
 
 Texture::~Texture()
 {
-	if(m_ID != GL_INVALID_VALUE)
+	if (m_ID != GL_INVALID_VALUE)
 		glDeleteTextures(1, &m_ID);
 }
 

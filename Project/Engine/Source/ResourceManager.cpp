@@ -28,7 +28,10 @@ void ResourceManager::_Unload(ResourceID id)
 {
 	auto& it = m_Instances.find(id);
 	if (it == m_Instances.end())
+	{
+		Log::Warning("Failed to unload resource - ID not found");
 		return;
+	}
 
 	delete it->second.Data;
 	m_Instances.erase(it);

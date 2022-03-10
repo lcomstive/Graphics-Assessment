@@ -1,8 +1,6 @@
 #version 330 core
-#include "ASSET_DIR/Shaders/Include/Camera.inc"
-#include "ASSET_DIR/Shaders/Include/Light.inc"
-#include "ASSET_DIR/Shaders/Include/Material.inc"
-#include "ASSET_DIR/Shaders/Include/PBR.inc"
+#include "#ASSET_DIR/Shaders/Include/Material.inc"
+#include "#ASSET_DIR/Shaders/Include/PBR.inc"
 
 out vec4 FragColour;
 
@@ -44,7 +42,7 @@ void main()
 	// Calculate lighting
 	FragColour.rgb = PBRLighting(input);
 	FragColour.a = material.AlbedoColour.a;
-	
+		
 	// Check for alpha clipping
 	if(material.AlphaClipping && FragColour.a <= material.AlphaClipThreshold)
 		discard;

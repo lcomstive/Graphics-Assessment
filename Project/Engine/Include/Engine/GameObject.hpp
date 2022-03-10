@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
 #include <typeindex>
-#include <unordered_map>
 #include <Engine/Log.hpp>
 #include <Engine/Api.hpp>
+#include <Engine/Types.hpp>
 #include <Engine/Components/Component.hpp>
 #include <Engine/Components/Transform.hpp>
 
@@ -15,7 +15,7 @@ namespace Engine
 		std::string m_Name;
 		Scene* m_Scene = nullptr;
 		Engine::Components::Transform* m_Transform;
-		std::unordered_map<std::type_index, Components::Component*> m_Components;
+		EngineUnorderedMap<std::type_index, Components::Component*> m_Components;
 
 	public:
 		ENGINE_API GameObject(std::string name = "GameObject");

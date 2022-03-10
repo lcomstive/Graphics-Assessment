@@ -1,3 +1,6 @@
+#ifndef _INCLUDE_MATERIAL_
+#define _INCLUDE_MATERIAL_
+
 struct Material
 {
 	vec4  AlbedoColour;
@@ -23,6 +26,11 @@ struct Material
 	bool HasRoughnessMap;
 	bool HasMetalnessMap;
 	bool HasAmbientOcclusionMap;
+
+	bool Tessellate;
+	int TessellationDistances[2];
 };
 
 uniform Material material;
+
+#endif

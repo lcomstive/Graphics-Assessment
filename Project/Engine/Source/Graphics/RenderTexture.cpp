@@ -76,7 +76,12 @@ RenderTexture::RenderTexture(ivec2 resolution, TextureFormat format, unsigned in
 
 RenderTexture::~RenderTexture()
 {
-	if (m_ID != GL_INVALID_VALUE)
+	if (m_ID == GL_INVALID_VALUE)
+		return;
+
+	if (IsDepthFormat(m_Format))
+		glDeleteRenderbuffers(1, &m_ID);
+	else
 		glDeleteTextures(1, &m_ID);
 	m_ID = GL_INVALID_VALUE;
 }

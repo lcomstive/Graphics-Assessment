@@ -1,5 +1,5 @@
 #version 330 core
-#include "ASSET_DIR/Shaders/Include/Material.inc"
+#include "#ASSET_DIR/Shaders/Include/Material.inc"
 
 out vec4 FragColour;
 

@@ -1,3 +1,8 @@
+#ifndef _INCLUDE_PBR_
+#define _INCLUDE_PBR_
+#include "#ASSET_DIR/Shaders/Include/Light.inc"
+#include "#ASSET_DIR/Shaders/Include/Camera.inc"
+
 const float PBR_PI = 3.14159265359;
 
 vec3 FresnelSchlick(float cosTheta, vec3 F0)
@@ -68,8 +73,8 @@ vec3 PBRLighting(PBRInput input)
 		const float Linear = 0.7;
 		const float Quadratic = 1.8;
 
-		// float attenuation = 1.0 / (1.0 + Linear * dist + Quadratic * dist * dist);
-		float attenuation = 1.0 / (dist * dist);
+		float attenuation = 1.0 / (1.0 + Linear * dist + Quadratic * dist * dist);
+		// float attenuation = 1.0 / (dist * dist);
 
 		vec3 radiance = lights[i].Colour * attenuation * lights[i].Intensity;
 
@@ -91,5 +96,8 @@ vec3 PBRLighting(PBRInput input)
 	
 	vec3 ambient = vec3(0.001) * input.Albedo;
 	vec3 colour = ambient + Lo;
-	return colour;  
+
+	return colour;
 }
+
+#endif

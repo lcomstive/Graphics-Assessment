@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <Engine/Application.hpp>
 #include <Engine/Graphics/Mesh.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Components/Camera.hpp>
@@ -27,7 +28,7 @@ void RenderPipeline::Draw(Camera& camera)
 		// Setup
 		info.Pass->Bind();
 
-		m_CurrentShader = info.Shader;
+		m_CurrentShader = ResourceManager::Get<Shader>(info.Shader);
 		if (m_CurrentShader)
 		{
 			m_CurrentShader->Bind();
@@ -37,17 +38,6 @@ void RenderPipeline::Draw(Camera& camera)
 			m_CurrentShader->Set("deltaTime", Renderer::GetDeltaTime());
 
 			camera.FillShader(m_CurrentShader);
-
-			auto lights = scene->Root().GetComponentsInChildren<Light>();
-			int lightCount = std::min((int32_t)lights.size(), MAX_LIGHTS);
-			m_CurrentShader->Set("lightCount", lightCount);
-			for (int i = 0; i < lightCount; i++)
-			{
-				m_CurrentShader->Set("lights[" + to_string(i) + "].Colour", lights[i]->Colour);
-				m_CurrentShader->Set("lights[" + to_string(i) + "].Radius", lights[i]->Radius);
-				m_CurrentShader->Set("lights[" + to_string(i) + "].Intensity", lights[i]->Intensity);
-				m_CurrentShader->Set("lights[" + to_string(i) + "].Position", lights[i]->GetTransform()->Position);
-			}
 		}
 
 		// Draw calls
@@ -84,9 +74,23 @@ void RenderPipeline::RemovePass(Framebuffer* pass)
 
 void RenderPipeline::AddPass(RenderPipelinePass& passInfo)
 {
-	if (passInfo.Pass)
-		m_RenderPasses.emplace_back(passInfo);
+	if (!passInfo.Pass)
+		return;
+	m_RenderPasses.emplace_back(passInfo);
 }
+
+Framebuffer* RenderPipeline::GetPassAt(unsigned int index)
+{
+	return index < m_RenderPasses.size() ? m_RenderPasses[index].Pass : nullptr;
+}
+
+RenderPipelinePass& RenderPipeline::GetRenderPassAt(unsigned int index)
+{
+	Log::Assert(index < m_RenderPasses.size(), "Index out of range!");
+	return m_RenderPasses[index];
+}
+
+std::vector<RenderPipelinePass>& RenderPipeline::GetAllRenderPasses() { return m_RenderPasses; }
 
 RenderTexture* RenderPipeline::GetOutputAttachment(unsigned int index)
 {
@@ -101,8 +105,16 @@ RenderTexture* RenderPipeline::GetOutputAttachment(unsigned int index)
 void RenderPipeline::OnResized(ivec2 resolution)
 {
 	for (RenderPipelinePass& pass : m_RenderPasses)
+	{
 		if (pass.ResizeWithScreen)
+		{
+			if (!pass.Pass)
+			{
+				Log::Error("WAIT");
+			}
 			pass.Pass->SetResolution(resolution);
+		}
+	}
 }
 
 Shader* RenderPipeline::CurrentShader() { return m_CurrentShader; }

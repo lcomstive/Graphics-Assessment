@@ -113,8 +113,6 @@ void Framebuffer::Recreate()
 	if (m_ID == GL_INVALID_VALUE)
 		Create();
 
-	Bind();
-
 	// Create attachments if they don't exist, otherwise alter existing ones
 	for (auto& attachment : m_ColourAttachments)
 	{
@@ -188,6 +186,8 @@ void Framebuffer::Unbind()
 void Framebuffer::SetResolution(ivec2 newResolution)
 {
 	m_Specs.Resolution = newResolution;
+	m_Specs.Resolution.x = std::max(m_Specs.Resolution.x, 1);
+	m_Specs.Resolution.y = std::max(m_Specs.Resolution.y, 1);
 	Recreate();
 }
 

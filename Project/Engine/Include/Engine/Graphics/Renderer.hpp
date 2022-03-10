@@ -7,6 +7,7 @@
 #include <Engine/ResourceID.hpp>
 #include <Engine/Graphics/Mesh.hpp>
 #include <Engine/Graphics/Gizmos.hpp>
+#include <Engine/Services/Service.hpp>
 #include <Engine/Graphics/Material.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
 
@@ -22,6 +23,9 @@ namespace Engine::Graphics
 		glm::vec3 Position = { 0, 0, 0 };
 		glm::vec3 Scale = { 1, 1, 1 };
 		glm::mat4 Rotation = glm::mat4(1.0f);
+
+		// For GL_LINES
+		float LineWidth = 1.0f;
 
 		bool DeleteMeshAfterRender = false;
 
@@ -64,11 +68,12 @@ namespace Engine::Graphics
 		glm::ivec2 m_Resolution;
 		bool m_Wireframe, m_VSync;
 		RenderPipeline* m_Pipeline;
+		bool m_SupportsTessellation;
 		Components::Camera* m_MainCamera;
 		float m_Time, m_FPS, m_DeltaTime;
 		std::vector<DrawCall> m_DrawQueue;
 
-		static Renderer* s_Instance;
+		static ENGINE_API Renderer* s_Instance;
 
 		static void Shutdown();
 		static void Resized(glm::ivec2 newResolution);
@@ -92,6 +97,7 @@ namespace Engine::Graphics
 		ENGINE_API static void SetMainCamera(Components::Camera* camera);
 
 #pragma region Setters
+		ENGINE_API static void ToggleWireframe();
 		ENGINE_API static void SetVSync(bool vsync = true);
 		ENGINE_API static void SetWireframe(bool wireframe = true);
 
@@ -102,6 +108,12 @@ namespace Engine::Graphics
 			if (s_Instance->m_Pipeline)
 				delete s_Instance->m_Pipeline;
 			s_Instance->m_Pipeline = new T();
+			s_Instance->m_Pipeline->OnResized(s_Instance->m_Resolution);
+			
+			auto& services = Application::GetAllServices();
+			for (Engine::Services::Service* service : services)
+				service->OnPipelineChanged(s_Instance->m_Pipeline);
+
 			return (T*)s_Instance->m_Pipeline;
 		}
 #pragma endregion
@@ -115,6 +127,12 @@ namespace Engine::Graphics
 		ENGINE_API static bool GetWireframeMode();
 		ENGINE_API static glm::ivec2 GetResolution();
 		ENGINE_API static RenderPipeline* GetPipeline();
+
+		/// <summary>
+		/// If the current hardware supports the tessellation feature (OpenGL 4.0+
+		/// </summary>
+		/// <returns></returns>
+		ENGINE_API static bool SupportsTessellation();
 #pragma endregion
 	};
 }

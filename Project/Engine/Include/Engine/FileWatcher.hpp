@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <Engine/Api.hpp>
+#include <Engine/Types.hpp>
 
 namespace Engine
 {
@@ -20,7 +21,7 @@ namespace Engine
 		std::atomic_bool m_Running;
 		std::chrono::duration<int, std::milli> m_Interval; // Time between checking for changes
 		std::function<void(std::string, FileWatchStatus)> m_Callback;
-		std::unordered_map<std::string, std::filesystem::file_time_type> m_WatchedPaths;
+		EngineUnorderedMap<std::string, std::filesystem::file_time_type> m_WatchedPaths;
 
 		void BeginWatching();
 

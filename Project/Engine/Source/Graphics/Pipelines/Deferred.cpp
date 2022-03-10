@@ -16,9 +16,9 @@ using namespace Engine::Graphics;
 using namespace Engine::Components;
 using namespace Engine::Graphics::Pipelines;
 
-DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
+DeferredRenderPipeline::DeferredRenderPipeline()
 {
-	FramebufferSpec framebufferSpecs = { Renderer::GetResolution()};
+	FramebufferSpec framebufferSpecs = { Renderer::GetResolution() };
 
 	// Mesh Pass //
 	framebufferSpecs.Attachments =
@@ -31,13 +31,21 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 
 	m_MeshPass = new Framebuffer(framebufferSpecs);
 
-	Shader* meshShader = new Shader(ShaderStageInfo
-		{
-			Application::AssetDir + "Shaders/Deferred/Mesh.vert",
-			Application::AssetDir + "Shaders/Deferred/Mesh.frag"
-		});
+	ShaderStageInfo meshShaderStages =
+	{
+		Application::AssetDir + "Shaders/Deferred/Mesh.vert",
+		Application::AssetDir + "Shaders/Deferred/Mesh.frag"
+	};
 
-	RenderPipelinePass pass = { meshShader , m_MeshPass };
+	if (Renderer::SupportsTessellation())
+	{
+		meshShaderStages.TessellationControl = Application::AssetDir + "Shaders/Tessellation/Control.tess";
+		meshShaderStages.TessellationEvaluate = Application::AssetDir + "Shaders/Tessellation/Evaluate.tess";
+	}
+	
+	m_MeshShader = ResourceManager::LoadNamed<Shader>("Shaders/Deferred/Mesh", meshShaderStages);
+
+	RenderPipelinePass pass = { m_MeshShader, m_MeshPass };
 	pass.DrawCallback = std::bind(&DeferredRenderPipeline::MeshPass, this, ::placeholders::_1);
 	AddPass(pass);
 
@@ -51,14 +59,14 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	pass.Pass = m_LightingPass;
 	pass.DrawCallback = bind(&DeferredRenderPipeline::LightingPass, this, ::placeholders::_1);
 
-	pass.Shader = new Shader(
+	pass.Shader = m_LightingShader = ResourceManager::LoadNamed<Shader>("Shaders/Deferred/Lighting",
 		ShaderStageInfo
 		{
 			Application::AssetDir + "Shaders/Deferred/Lighting.vert",
 			Application::AssetDir + "Shaders/Deferred/Lighting.frag",
 		});
 	AddPass(pass);
-	
+
 	// Forward/Transparent Pass //
 	framebufferSpecs.Attachments =
 	{
@@ -69,21 +77,18 @@ DeferredRenderPipeline::DeferredRenderPipeline() : m_ForwardPass(nullptr)
 	pass.Pass = m_ForwardPass;
 	pass.DrawCallback = bind(&DeferredRenderPipeline::ForwardPass, this, ::placeholders::_1);
 
-	pass.Shader = new Shader(
+	m_ForwardShader = ResourceManager::LoadNamed<Shader>("Shaders/Forward",
 		ShaderStageInfo
 		{
 			Application::AssetDir + "Shaders/Forward/Mesh.vert",
 			Application::AssetDir + "Shaders/Forward/Mesh.frag",
 		});
+	pass.Shader = m_ForwardShader;
 	AddPass(pass);
 }
 
 DeferredRenderPipeline::~DeferredRenderPipeline()
 {
-	RemovePass(m_MeshPass);
-	RemovePass(m_ForwardPass);
-	RemovePass(m_LightingPass);
-
 	delete m_MeshPass;
 	delete m_ForwardPass;
 	delete m_LightingPass;
@@ -128,22 +133,25 @@ void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 	// FILL LIGHT DATA //
 	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
 	auto lights = scene->Root().GetComponentsInChildren<Light>();
-
-	unsigned int lightIndex = 0;
-	unsigned int lightCount = std::min((unsigned int)lights.size(), MaxLights);
-	shader->Set("lightCount", (int)lightCount);
-	for (Light* light : lights)
+	int lightCount = std::min((int32_t)lights.size(), MAX_LIGHTS);
+	m_CurrentShader->Set("lightCount", lightCount);
+	for (int i = 0; i < lightCount; i++)
 	{
-		shader->Set("lights[" + to_string(lightIndex) + "].Colour", light->Colour);
-		shader->Set("lights[" + to_string(lightIndex) + "].Radius", light->Radius);
-		shader->Set("lights[" + to_string(lightIndex) + "].Position", light->GetTransform()->Position);
-
-		if (++lightIndex >= MaxLights)
-			break;
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Colour", lights[i]->Colour);
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Radius", lights[i]->Radius);
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Intensity", lights[i]->Intensity);
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Position", lights[i]->GetTransform()->Position);
 	}
 
 	// DRAW FULLSCREEN QUAD //
 	ResourceManager::Get<Mesh>(Mesh::Quad())->Draw();
+
+	// Unbind textures
+	for (int i = 0; i < 4; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 }
 
 void DeferredRenderPipeline::ForwardPass(Framebuffer* previous)

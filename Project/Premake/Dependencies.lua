@@ -8,6 +8,7 @@ IncludeDir["Glad"] = "%{DependencyDir}glad/include"
 IncludeDir["GLFW"] = "%{DependencyDir}glfw/include"
 IncludeDir["Assimp"] = "%{DependencyDir}assimp/include"
 IncludeDir["termcolor"] = "%{DependencyDir}termcolor/include"
+IncludeDir["robin-hood-hash"] = "%{DependencyDir}robin-hood-hashing/src/include"
 
 group "Dependencies"
 	include "./Modules/Assimp.lua"

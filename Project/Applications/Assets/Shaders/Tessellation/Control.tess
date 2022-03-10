@@ -1,0 +1,57 @@
+#version 400 core
+#include "#ASSET_DIR/Shaders/Include/Camera.inc"
+
+// Control points in patch
+layout (vertices = 3) out;
+
+in mat3 TBN_Tess[]; // Tangent, Bitangent, Normal
+in vec3 WorldPos_Tess[];
+in vec2 TexCoords_Tess[];
+
+out mat3 TBN_Pass[]; // Tangent, Bitangent, Normal
+out vec3 WorldPos_Pass[];
+out vec2 TexCoords_Pass[];
+
+struct Material
+{
+	bool Tessellate;
+	int TessellationDistances[2];
+}
+uniform Material material;
+
+float GetTessLevel(float distance0, float distance1)
+{
+	float avgDistance = (distance0 + distance1) / 2.0;
+
+	if(avgDistance <= material.TessellationDistances[0])
+		return 10.0;
+	if(avgDistance <= material.TessellationDistances[1])
+		return 5.0;
+	return 1.0;
+}
+
+void main()
+{
+	TBN_Pass[gl_InvocationID] = TBN_Tess[gl_InvocationID];
+	WorldPos_Pass[gl_InvocationID] = WorldPos_Tess[gl_InvocationID];
+	TexCoords_Pass[gl_InvocationID] = TexCoords_Tess[gl_InvocationID];
+
+	float distanceToCam0 = distance(camera.Position, WorldPos_Pass[0]);
+	float distanceToCam1 = distance(camera.Position, WorldPos_Pass[1]);
+	float distanceToCam2 = distance(camera.Position, WorldPos_Pass[2]);
+
+	if(material.Tessellate)
+	{
+		gl_TessLevelOuter[0] = GetTessLevel(distanceToCam1, distanceToCam2);
+		gl_TessLevelOuter[1] = GetTessLevel(distanceToCam2, distanceToCam0);
+		gl_TessLevelOuter[2] = GetTessLevel(distanceToCam0, distanceToCam1);
+		gl_TessLevelInner[0] = gl_TessLevelOuter[2];
+	}
+	else
+	{
+		gl_TessLevelOuter[0] = 1.0;
+		gl_TessLevelOuter[1] = 1.0;
+		gl_TessLevelOuter[2] = 1.0;
+		gl_TessLevelInner[0] = 1.0;		
+	}
+}

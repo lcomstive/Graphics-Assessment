@@ -5,6 +5,7 @@
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/SceneService.hpp>
+#include <Engine/Services/GizmoService.hpp>
 #include <Engine/Services/ExternalService.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 #include <Engine/Graphics/Pipelines/Deferred.hpp>
@@ -63,6 +64,8 @@ void Application::Run()
 	Log::SetLogLevel(Log::LogLevel::All);
 	Log::Info("Starting engine..");
 
+	CreateAppWindow();
+
 	// Create Resource Manager instance
 	m_ResourceManager = new ResourceManager();
 
@@ -75,20 +78,21 @@ void Application::Run()
 	m_Gizmos = new Gizmos();
 	Gizmos::s_Instance = m_Gizmos;
 
-	CreateAppWindow();
+	// Load services
+	InitServices();
+
+#ifndef NDEBUG
+	// Enable gizmos by default in debug mode
+	EnableGizmos(true);
+#endif
 
 	// Setup Render Pipeline
 	// Renderer::SetPipeline<Pipelines::ForwardRenderPipeline>();
 	Renderer::SetPipeline<Pipelines::DeferredRenderPipeline>();
-	
+
 	Renderer::SetVSync(m_Args.VSync);
 	Renderer::Resized(m_Args.Resolution);
-	
-	SetupGizmos();
 
-	// Load services
-	InitServices();
-	
 	for (auto& pair : m_Services)
 		pair.second->OnStart();
 
@@ -99,6 +103,7 @@ void Application::Run()
 	float frameCountTime = 0; // How long since the last second has passed
 	float frameStartTime = (m_Renderer->m_Time = (float)glfwGetTime()); // Game time at start of frame
 
+	ImGuiIO& ImGUI_IO = ImGui::GetIO();
 	m_State = ApplicationState::Running;
 	SceneService* sceneService = GetService<SceneService>();
 	while (!glfwWindowShouldClose(m_Window) && m_State == ApplicationState::Running)
@@ -106,6 +111,7 @@ void Application::Run()
 		float deltaTime = (float)m_Renderer->m_DeltaTime;
 		for (auto& pair : m_Services)
 			pair.second->OnUpdate(deltaTime);
+
 		Input::s_Instance->Update();
 
 #pragma region Drawing
@@ -131,7 +137,15 @@ void Application::Run()
 		}
 
 		ImGui::Render(); // Draw ImGUI result
+
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		if (ImGUI_IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(m_Window);
+		}
 
 		glfwSwapBuffers(m_Window);
 #pragma endregion
@@ -261,18 +275,149 @@ void Application::CreateAppWindow()
 	IMGUI_CHECKVERSION();
 	m_ImGuiContext = ImGui::CreateContext();
 
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
 	ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGui::StyleColorsDark();
+	StyleImGUI();
+
 #pragma endregion
 	
 	Log::Debug("Engine initialised");
+}
+
+// Totally not sourced from https://github.com/inanevin/LinaEngine/blob/master/LinaEditor/src/Core/GUILayer.cpp :)
+const vec2 DefaultFramePadding = { 8, 2 };
+const vec2 DefaultWindowPadding = { 8, 8 };
+void Application::StyleImGUI()
+{
+	ImGuiIO& io = ImGui::GetIO();
+
+	// Setup configuration flags.
+	ImGuiStyle& style = ImGui::GetStyle();
+	ImVec4* colors = ImGui::GetStyle().Colors;
+	style.FrameBorderSize = 1.0f;
+	style.PopupBorderSize = 1.0f;
+	// style.AntiAliasedFill = false;
+	// style.WindowRounding = 0.0f;
+	style.TabRounding = 3.0f;
+	// style.ChildRounding = 0.0f;
+	style.PopupRounding = 3.0f;
+	// style.FrameRounding = 0.0f;
+	// style.ScrollbarRounding = 5.0f;
+	style.FramePadding = ImVec2(DefaultFramePadding.x, DefaultFramePadding.y);
+	style.WindowPadding = ImVec2(DefaultWindowPadding.x, DefaultWindowPadding.y);
+	style.CellPadding = ImVec2(9, 2);
+	// style.ItemInnerSpacing = ImVec2(8, 4);
+	// style.ItemInnerSpacing = ImVec2(5, 4);
+	// style.GrabRounding = 6.0f;
+	// style.GrabMinSize     = 6.0f;
+	style.ChildBorderSize = 0.0f;
+	// style.TabBorderSize = 0.0f;
+	style.WindowBorderSize = 1.0f;
+	style.WindowMenuButtonPosition = ImGuiDir_None;
+	colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+	colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+	colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
+	colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+	// colors[ImGuiCol_PopupBorder] = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
+	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.04f, 0.04f, 0.04f, 0.54f);
+	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.44f, 0.26f, 0.26f, 1.00f);
+	colors[ImGuiCol_FrameBgActive] = ImVec4(0.47f, 0.19f, 0.19f, 1.00f);
+	colors[ImGuiCol_TitleBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+	colors[ImGuiCol_MenuBarBg] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
+	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.23f, 0.23f, 0.23f, 1.00f);
+	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.30f, 0.30f, 0.30f, 1.00f);
+	colors[ImGuiCol_CheckMark] = ImVec4(0.47f, 0.19f, 0.19f, 1.00f);
+	colors[ImGuiCol_SliderGrab] = ImVec4(0.47f, 0.19f, 0.19f, 1.00f);
+	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.74f, 0.74f, 0.74f, 1.00f);
+	colors[ImGuiCol_Button] = ImVec4(0.23f, 0.23f, 0.23f, 1.00f);
+	colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.49f, 0.62f, 1.00f);
+	colors[ImGuiCol_ButtonActive] = ImVec4(0.24f, 0.37f, 0.53f, 1.00f);
+	/*
+	colors[ImGuiCol_ButtonLocked] = ImVec4(0.183f, 0.273f, 0.364f, 1.000f);
+	colors[ImGuiCol_ButtonSecondary] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_ButtonSecondaryHovered] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_ButtonSecondaryActive] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_ButtonSecondaryLocked] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_Folder] = ImVec4(0.23f, 0.23f, 0.23f, 1.00f);
+	colors[ImGuiCol_FolderHovered] = ImVec4(0.35f, 0.49f, 0.62f, 1.00f);
+	colors[ImGuiCol_FolderActive] = ImVec4(0.24f, 0.37f, 0.53f, 1.00f);
+	colors[ImGuiCol_Toolbar] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+	colors[ImGuiCol_Icon] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+	colors[ImGuiCol_TitleHeader] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
+	colors[ImGuiCol_TitleHeaderHover] = ImVec4(0.12f, 0.12f, 0.12f, 1.00f);
+	colors[ImGuiCol_TitleHeaderPressed] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+	colors[ImGuiCol_TitleHeaderBorder] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+	colors[ImGuiCol_TitleHeaderDisabled] = ImVec4(0.17f, 0.00f, 0.00f, 1.00f);
+	*/
+	colors[ImGuiCol_Header] = ImVec4(0.47f, 0.19f, 0.19f, 1.00f);
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.43f, 0.24f, 0.24f, 1.00f);
+	colors[ImGuiCol_HeaderActive] = ImVec4(0.49f, 0.32f, 0.32f, 1.00f);
+	colors[ImGuiCol_Separator] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+	colors[ImGuiCol_SeparatorActive] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+	colors[ImGuiCol_ResizeGrip] = ImVec4(0.44f, 0.44f, 0.44f, 1.00f);
+	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.58f, 0.58f, 0.58f, 1.00f);
+	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.73f, 0.73f, 0.73f, 1.00f);
+	colors[ImGuiCol_Tab] = ImVec4(0.12f, 0.12f, 0.12f, 1.00f);
+	colors[ImGuiCol_TabHovered] = ImVec4(0.24f, 0.25f, 0.26f, 1.00f);
+	colors[ImGuiCol_TabActive] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
+	colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
+	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
+	colors[ImGuiCol_DockingPreview] = ImVec4(0.47f, 0.19f, 0.19f, 1.00f);
+	colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
+	colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+	colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+	colors[ImGuiCol_PlotHistogram] = ImVec4(0.69f, 0.15f, 0.29f, 1.00f);
+	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+	colors[ImGuiCol_TableHeaderBg] = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
+	colors[ImGuiCol_TableBorderStrong] = ImVec4(0.16f, 0.16f, 0.16f, 1.00f);
+	colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
+	colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+	colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.47f, 0.20f, 0.20f, 0.71f);
+	colors[ImGuiCol_DragDropTarget] = ImVec4(0.58f, 0.23f, 0.23f, 0.71f);
+	colors[ImGuiCol_NavHighlight] = ImVec4(0.28f, 0.28f, 0.28f, 1.00f);
+	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.61f);
+
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		style.WindowRounding = 0.0f;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+	}
 }
 
 ApplicationState Application::GetState() { return s_Instance->m_State; }
 void Application::SetTitle(std::string title) { glfwSetWindowTitle(s_Instance->m_Window, (s_Instance->m_Args.Title = title).c_str()); }
 bool Application::GetFullscreen() { return s_Instance->m_Args.Fullscreen; }
 void Application::ToggleFullscreen() { SetFullscreen(!s_Instance->m_Args.Fullscreen); }
+
+void Application::EnableGizmos(bool enable)
+{
+	if (enable) AddService<GizmoService>();
+	else		RemoveService<GizmoService>();
+}
+
+vector<Service*> Application::GetAllServices()
+{
+	vector<Service*> services;
+	for (auto& pair : s_Instance->m_Services)
+		services.emplace_back(pair.second);
+	return services;
+}
 
 void Application::ShowMouse(bool show)
 {
@@ -311,36 +456,6 @@ void Application::_SetFullscreen(bool fullscreen)
 		videoMode->refreshRate
 	);
 	Renderer::SetVSync(m_Args.VSync);
-}
-
-void Application::SetupGizmos()
-{
-#ifndef NDEBUG
-	RenderPipelinePass pass;
-	FramebufferSpec spec;
-	spec.Attachments = { { TextureFormat::RGBA16F, TexturePixelType::Float }, TextureFormat::Depth };
-	spec.Resolution = Renderer::GetResolution();
-	pass.Pass = new Framebuffer(spec);
-	pass.Shader = new Shader(ShaderStageInfo
-		{
-			AssetDir + "Shaders/Gizmos.vert",
-			AssetDir + "Shaders/Gizmos.frag"
-		});
-	pass.DrawCallback = [=](Framebuffer* previous)
-	{
-		// Copy color & depth buffer to this pass
-		previous->BlitTo(pass.Pass, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glEnable(GL_DEPTH_TEST);
-
-		for (auto& pair : m_Services)
-			pair.second->OnDrawGizmos();
-
-		Renderer::Draw();
-		Renderer::SetWireframe(false);
-	};
-	Renderer::GetPipeline()->AddPass(pass);
-#endif
 }
 
 #pragma region GLFW Callbacks

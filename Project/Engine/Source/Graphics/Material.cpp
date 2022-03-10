@@ -14,7 +14,11 @@ void BindTexture(unsigned int index, string shaderName, ResourceID& textureID, S
 	glActiveTexture(GL_TEXTURE0 + index);
 	
 	if (textureID != InvalidResourceID)
-		ResourceManager::Get<Texture>(textureID)->Bind(index);
+	{
+		Texture* texture = ResourceManager::Get<Texture>(textureID);
+		if(texture)
+			texture->Bind(index);
+	}
 	else
 		glBindTexture(GL_TEXTURE_2D, 0);
 }

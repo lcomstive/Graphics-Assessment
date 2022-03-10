@@ -1,5 +1,5 @@
 #version 330 core
-#include "ASSET_DIR/Shaders/Include/Material.inc"
+#include "#ASSET_DIR/Shaders/Include/Material.inc"
 
 layout (location = 0) out vec4 gPositionRoughness;
 layout (location = 1) out vec4 gNormalMetalness;

@@ -2,6 +2,7 @@
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
+#include <Engine/Services/SceneService.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 
 using namespace glm;
@@ -11,6 +12,8 @@ using namespace Engine::Graphics;
 using namespace Engine::Components;
 using namespace Engine::Graphics::Pipelines;
 
+#define USE_TESSELLATION 0
+
 ForwardRenderPipeline::ForwardRenderPipeline() 
 {
 	FramebufferSpec framebufferSpecs = { Renderer::GetResolution() };
@@ -19,38 +22,59 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 		{ TextureFormat::RGBA16F, TexturePixelType::Float },
 		TextureFormat::Depth
 	};
-	
-	Shader* shader = new Shader(ShaderStageInfo
-		{
-			Application::AssetDir + "Shaders/Forward/Mesh.vert",
-			Application::AssetDir + "Shaders/Forward/Mesh.frag"
-		});
+
+	ShaderStageInfo shaderStages =
+	{
+		Application::AssetDir + "Shaders/Deferred/Mesh.vert",
+		Application::AssetDir + "Shaders/Deferred/Mesh.frag"
+	};
+
+	if (Renderer::SupportsTessellation())
+	{
+		shaderStages.TessellationControl = Application::AssetDir + "Shaders/Tessellation/Control.tess";
+		shaderStages.TessellationEvaluate = Application::AssetDir + "Shaders/Tessellation/Evaluate.tess";
+	}
+	m_ForwardShader = ResourceManager::LoadNamed<Shader>("Shaders/Forward", shaderStages);
+
 	m_ForwardPass = new Framebuffer(framebufferSpecs);
-	RenderPipelinePass pass = { shader, m_ForwardPass };
+	RenderPipelinePass pass = { m_ForwardShader, m_ForwardPass };
 	pass.DrawCallback = bind(&ForwardRenderPipeline::ForwardPass, this, ::placeholders::_1);
 
 	AddPass(pass);
-
-	Log::Info("Forward Renderer initialized");
 }
 
 ForwardRenderPipeline::~ForwardRenderPipeline()
 {
-	Framebuffer* forwardPass = m_RenderPasses[0].Pass;
-	RemovePass(forwardPass);
-	delete forwardPass;
+	RemovePass(m_ForwardPass);
+	delete m_ForwardPass;
 }
 
 void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 {
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(0, 0, 0, 0);
+	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
+	auto lights = scene->Root().GetComponentsInChildren<Light>();
+	int lightCount = std::min((int32_t)lights.size(), MAX_LIGHTS);
+	m_CurrentShader->Set("lightCount", lightCount);
+	for (int i = 0; i < lightCount; i++)
+	{
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Colour", lights[i]->Colour);
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Radius", lights[i]->Radius);
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Intensity", lights[i]->Intensity);
+		m_CurrentShader->Set("lights[" + to_string(i) + "].Position", lights[i]->GetTransform()->Position);
+	}
+
 	DrawArgs args;
 	args.DrawSorting = DrawSortType::BackToFront;
 	Renderer::Draw(args);
+
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	glBlendFunc(GL_ONE, GL_ZERO);
 }

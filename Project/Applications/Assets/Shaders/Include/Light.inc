@@ -1,3 +1,7 @@
+#ifndef _INCLUDE_LIGHT_
+#define _INCLUDE_LIGHT_
+#include "#ASSET_DIR/Shaders/Include/Camera.inc"
+
 const int MAX_LIGHTS = 100;
 
 struct Light
@@ -20,7 +24,6 @@ uniform vec3 ambientLighting = vec3(0.1, 0.1, 0.1);
 
 vec3 BlinnPhong(vec3 albedo, vec3 fragPosition, vec3 normals)
 {
-	normals = normalize(normals);
 	vec3 lighting = albedo * ambientLighting;
 	vec3 viewDir = normalize(camera.Position - fragPosition);
 	for(int i = 0; i < lightCount; i++)
@@ -40,3 +43,5 @@ vec3 BlinnPhong(vec3 albedo, vec3 fragPosition, vec3 normals)
 
 	return lighting;
 }
+
+#endif

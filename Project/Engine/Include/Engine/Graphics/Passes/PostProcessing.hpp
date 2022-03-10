@@ -7,6 +7,7 @@ namespace Engine::Graphics
 	class FullscreenEffectPass
 	{
 		RenderPipelinePass m_Pass;
+		Shader* m_Shader = nullptr;
 
 		void DrawCallback(Framebuffer* previous);
 
