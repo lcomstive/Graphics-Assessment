@@ -16,7 +16,7 @@ project "Application Base"
 	includedirs
 	{
 		"Include",
-		IncludeDir,
+		IncludeDir, -- Array of directories from project root
 		"%{wks.location}/../Engine/Include"
 	}
 

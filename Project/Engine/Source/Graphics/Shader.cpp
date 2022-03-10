@@ -289,13 +289,16 @@ void Shader::CacheUniformLocations()
 		GLint size;
 		glGetActiveUniform(m_Program, i, nameLength, &nameLength, &size, &m_Uniforms[i].Type, m_Uniforms[i].Name.data());
 
+#if USE_STRING_ID
+		m_NamedUniforms.emplace(make_pair(StringId(m_Uniforms[i].Name.c_str()).GetValue(), &m_Uniforms[i]));
+#else
+		m_NamedUniforms.emplace(make_pair(m_Uniforms[i].Name, m_Uniforms));
+#endif
+
 		m_Uniforms[i].Location = glGetUniformLocation(m_Program, m_Uniforms[i].Name.c_str());
 
 		// Log::Debug(" [" + to_string(m_Uniforms[i].Location) + "] " + m_Uniforms[i].Name);
 	}
-
-	// Insert invalid uniform at beginning
-	m_Uniforms.insert(m_Uniforms.begin(), ShaderUniform{});
 }
 
 void Shader::Bind()
@@ -318,36 +321,40 @@ void Shader::Unbind()
 unsigned int Shader::GetProgram() { return m_Program; }
 unsigned int Shader::GetUniformCount() { return (unsigned int)m_Uniforms.size(); }
 
-void Shader::Set(int& location, int value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
-void Shader::Set(int& location, bool value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
-void Shader::Set(int& location, float value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1f(m_Program, location, value); }
+void Shader::Set(int& location, int value)	  const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
+void Shader::Set(int& location, bool value)   const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1i(m_Program, location, value); }
+void Shader::Set(int& location, float value)  const { if (m_Program != GL_INVALID_VALUE) glProgramUniform1f(m_Program, location, value); }
 void Shader::Set(int& location, double value) const { Set(location, (float)value); }
-void Shader::Set(int& location, vec2 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform2f(m_Program, location, value.x, value.y); }
-void Shader::Set(int& location, vec3 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform3f(m_Program, location, value.x, value.y, value.z); }
-void Shader::Set(int& location, vec4 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniform4f(m_Program, location, value.x, value.y, value.z, value.w); }
-void Shader::Set(int& location, mat3 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix3fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
-void Shader::Set(int& location, mat4 value) const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix4fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
+void Shader::Set(int& location, vec2 value)   const { if (m_Program != GL_INVALID_VALUE) glProgramUniform2f(m_Program, location, value.x, value.y); }
+void Shader::Set(int& location, vec3 value)   const { if (m_Program != GL_INVALID_VALUE) glProgramUniform3f(m_Program, location, value.x, value.y, value.z); }
+void Shader::Set(int& location, vec4 value)   const { if (m_Program != GL_INVALID_VALUE) glProgramUniform4f(m_Program, location, value.x, value.y, value.z, value.w); }
+void Shader::Set(int& location, mat3 value)   const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix3fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
+void Shader::Set(int& location, mat4 value)   const { if (m_Program != GL_INVALID_VALUE) glProgramUniformMatrix4fv(m_Program, location, 1, GL_FALSE, value_ptr(value)); }
 
-void Shader::Set(string locationName, int value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, bool value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, float value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, double value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, vec2 value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, vec3 value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, vec4 value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, mat3 value) { Set(GetUniformInfo(locationName).Location, value); }
-void Shader::Set(string locationName, mat4 value) { Set(GetUniformInfo(locationName).Location, value); }
+void Shader::Set(string locationName, int value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, bool value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, float value)  { ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, double value) { ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, vec2 value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, vec3 value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, vec4 value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, mat3 value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
+void Shader::Set(string locationName, mat4 value)	{ ShaderUniform* uniform = GetUniformInfo(locationName); if(uniform) Set(uniform->Location, value); }
 
-ShaderUniform& Shader::GetUniformInfo(int location)
+ShaderUniform* Shader::GetUniformInfo(int location)
 {
 	location++; // First cached uniform is an invalid one
-	return (location >= 0 && location < m_Uniforms.size() ? m_Uniforms[location] : m_Uniforms[0]);
+	return (location >= 0 && location < m_Uniforms.size() ? &m_Uniforms[location] : nullptr);
 }
 
-ShaderUniform& Shader::GetUniformInfo(std::string& locationName)
+ShaderUniform* Shader::GetUniformInfo(std::string& locationName)
 {
-	for (auto& uniform : m_Uniforms)
-		if (locationName.compare(uniform.Name) == 0)
-			return uniform;
-	return m_Uniforms[0];
+	auto& it = m_NamedUniforms.find(
+#if USE_STRING_ID
+		StringId(locationName.c_str()).GetValue()
+#else
+		locationName
+#endif
+	);
+	return it != m_NamedUniforms.end() ? it->second : nullptr;
 }

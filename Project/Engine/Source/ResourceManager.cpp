@@ -39,7 +39,13 @@ void ResourceManager::_Unload(ResourceID id)
 
 void ResourceManager::_Unload(string& name)
 {
-	auto& it = m_NamedInstances.find(name);
+	auto& it = m_NamedInstances.find(
+#if USE_STRING_ID
+		StringId(name.c_str()).GetValue()
+#else
+		name
+#endif
+	);
 	if (it != m_NamedInstances.end())
 		_Unload(it->second);
 }
@@ -52,16 +58,17 @@ void ResourceManager::_UnloadAll()
 }
 
 bool ResourceManager::_IsValid(ResourceID& id) { return m_Instances.find(id) != m_Instances.end(); }
-bool ResourceManager::_IsValid(string& name) { return m_NamedInstances.find(name) != m_NamedInstances.end(); }
+bool ResourceManager::_IsValid(string& name)
+#if USE_STRING_ID
+{ return m_NamedInstances.find(StringId(name.c_str()).GetValue()) != m_NamedInstances.end(); }
+#else
+{ return m_NamedInstances.find(name) != m_NamedInstances.end(); }
+#endif
 
 std::string ResourceManager::_GetName(ResourceID id)
 {
-	for (auto& it = m_NamedInstances.begin(); it != m_NamedInstances.end(); it++)
-	{
-		if (it->second == id)
-			return it->first;
-	}
-	return "";
+	auto& it = m_NamedInstanceNames.find(id);
+	return it == m_NamedInstanceNames.end() ? it->second : "";
 }
 
 std::type_index ResourceManager::_GetType(ResourceID& id)
@@ -72,6 +79,12 @@ std::type_index ResourceManager::_GetType(ResourceID& id)
 
 std::type_index ResourceManager::_GetType(string& name)
 {
-	auto& it = m_NamedInstances.find(name);
+	auto& it = m_NamedInstances.find(
+#if USE_STRING_ID
+		StringId(name.c_str()).GetValue()
+#else
+		name
+#endif
+	);
 	return it == m_NamedInstances.end() ? typeid(bool) : _GetType(it->second);
 }

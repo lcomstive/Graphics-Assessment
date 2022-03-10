@@ -22,7 +22,15 @@ namespace Engine
 		};
 
 		EngineUnorderedMap<ResourceID, ResourceInstance> m_Instances;
-		EngineUnorderedMap<EngineString, ResourceID> m_NamedInstances; // Name -> ResourceID
+
+		// Mapping of Name to ResourceID
+
+#if USE_STRING_ID
+		EngineUnorderedMap<StringId::Storage, ResourceID> m_NamedInstances;
+#else
+		EngineUnorderedMap<std::string, ResourceID> m_NamedInstances;
+#endif
+		EngineUnorderedMap<ResourceID, std::string> m_NamedInstanceNames;
 
 		ResourceManager();
 		~ResourceManager();
@@ -46,12 +54,33 @@ namespace Engine
 		template<typename T, class... Args>
 		ResourceID _LoadNamed(std::string& name, Args... constructorArgs)
 		{
-			auto& it = m_NamedInstances.find(name);
+#if USE_STRING_ID
+			StringId::Storage sid = StringId(name.c_str()).GetValue();
+#endif
+
+			auto& it = m_NamedInstances.find(
+#if USE_STRING_ID
+				sid
+#else
+				name
+#endif
+			);
 			if (it != m_NamedInstances.end())
 				return it->second;
 
-			ResourceID id = _Load<T, Args...>(constructorArgs...);
-			m_NamedInstances.emplace(make_pair(name, id));
+			ResourceID id = _Load<T>(constructorArgs...);
+			m_NamedInstances.emplace(make_pair(
+#if USE_STRING_ID
+				sid
+#else
+				name
+#endif
+			, id));
+
+#if USE_STRING_ID
+			m_NamedInstanceNames.emplace(make_pair(id, name));
+#endif
+
 			return id;
 		}
 
@@ -72,7 +101,13 @@ namespace Engine
 		template<typename T>
 		T* _Get(std::string& name)
 		{
-			auto& it = m_NamedInstances.find(name);
+			auto& it = m_NamedInstances.find(
+#if USE_STRING_ID
+				StringId(name.c_str()).GetValue()
+#else
+				name
+#endif
+			);
 			if (it == m_NamedInstances.end())
 				return nullptr;
 			return _Get<T>(it->second);

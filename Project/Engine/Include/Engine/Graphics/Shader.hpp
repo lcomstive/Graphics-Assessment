@@ -44,6 +44,12 @@ namespace Engine::Graphics
 		std::vector<ShaderUniform> m_Uniforms = { {} };
 		EngineUnorderedMap<std::string, FileWatcher*> m_Watchers;
 
+#if USE_STRING_ID
+		EngineUnorderedMap<StringId::Storage, ShaderUniform*> m_NamedUniforms;
+#else
+		EngineUnorderedMap<std::string&, ShaderUniform&> m_NamedUniforms;
+#endif
+
 		void Destroy();
 		void CreateShaders();
 		void CacheUniformLocations();
@@ -86,9 +92,9 @@ namespace Engine::Graphics
 		ENGINE_API void Set(std::string locationName, glm::mat4 value);
 
 		/// <returns>Information about the uniform at location, or an invalid struct if outside of bounds</returns>
-		ENGINE_API ShaderUniform& GetUniformInfo(int location);
+		ENGINE_API ShaderUniform* GetUniformInfo(int location);
 
 		/// <returns>Information about the uniform at locationName, or an invalid struct if not found</returns>
-		ENGINE_API ShaderUniform& GetUniformInfo(std::string& locationName);
+		ENGINE_API ShaderUniform* GetUniformInfo(std::string& locationName);
 	};
 }
