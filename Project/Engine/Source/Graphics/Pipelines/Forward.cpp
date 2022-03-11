@@ -3,6 +3,7 @@
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/SceneService.hpp>
+#include <Engine/Graphics/Passes/ShadowMap.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 
 using namespace glm;
@@ -63,11 +64,13 @@ void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 	int lightCount = std::min((int32_t)lights.size(), MAX_LIGHTS);
 	m_CurrentShader->Set("lightCount", lightCount);
 	for (int i = 0; i < lightCount; i++)
+		lights[i]->FillShader(i, m_CurrentShader);
+
+	ShadowMapPass* shadowMap = Renderer::GetPipeline()->GetShadowMapPass();
+	if (shadowMap && shadowMap->GetPipelinePass().Pass)
 	{
-		m_CurrentShader->Set("lights[" + to_string(i) + "].Colour", lights[i]->Colour);
-		m_CurrentShader->Set("lights[" + to_string(i) + "].Radius", lights[i]->Radius);
-		m_CurrentShader->Set("lights[" + to_string(i) + "].Intensity", lights[i]->Intensity);
-		m_CurrentShader->Set("lights[" + to_string(i) + "].Position", lights[i]->GetTransform()->Position);
+		shadowMap->GetTexture()->Bind(5);
+		m_CurrentShader->Set("shadowMap", 5);
 	}
 
 	DrawArgs args;

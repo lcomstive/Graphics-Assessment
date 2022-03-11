@@ -8,8 +8,16 @@ namespace Engine
 
 	namespace Components
 	{
+		class Component;
 		struct Transform;
 		struct Rigidbody;
+		class RawComponent;
+
+		ENGINE_API void OverrideComponentInternals(
+			Component* component,
+			GameObject* go,
+			Transform* transform = nullptr,
+			Rigidbody* rb = nullptr);
 
 		class Component
 		{
@@ -19,6 +27,7 @@ namespace Engine
 			Transform* m_CachedTransform = nullptr;
 
 			friend class Engine::GameObject;
+			friend ENGINE_API void OverrideComponentInternals(Component*, GameObject*, Transform*, Rigidbody*);
 
 		protected:
 			/// <summary>

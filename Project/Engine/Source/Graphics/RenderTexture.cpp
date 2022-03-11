@@ -6,7 +6,7 @@ using namespace glm;
 using namespace Engine;
 using namespace Engine::Graphics;
 
-GLenum Engine::Graphics::GetTextureTarget(TextureFormat target, bool multisampled)
+GLenum Engine::Graphics::GetTextureTarget(TextureFormat target, bool multisampled, RenderTextureDepth depth)
 {
 	switch (target)
 	{
@@ -19,12 +19,18 @@ GLenum Engine::Graphics::GetTextureTarget(TextureFormat target, bool multisample
 	case TextureFormat::RGBA8:
 	case TextureFormat::RGBA16:
 	case TextureFormat::RGBA16F:
-		return multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+	case TextureFormat::Depth16:
+	case TextureFormat::Depth24:
+	case TextureFormat::Depth32:
+		if (depth.Depth <= 1)
+			return multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+		else if (depth.Is3D)
+			return GL_TEXTURE_3D;
+		return multisampled ? GL_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_ARRAY;
 	case TextureFormat::Cubemap:
 		return GL_TEXTURE_CUBE_MAP;
-	case TextureFormat::Depth:
-		return GL_TEXTURE_DEPTH;
 	}
+	Log::Assert(false, "Shouldn't be here?");
 }
 
 GLenum Engine::Graphics::TextureFormatToInternalGLFormat(TextureFormat format)
@@ -38,6 +44,9 @@ GLenum Engine::Graphics::TextureFormatToInternalGLFormat(TextureFormat format)
 	case TextureFormat::RGBA16F:	return GL_RGBA16F;
 	case TextureFormat::RedInteger:	return GL_R32I;
 	case TextureFormat::Cubemap:	return GL_RGB16F;
+	case TextureFormat::Depth16:	return GL_DEPTH_COMPONENT16;
+	case TextureFormat::Depth24:	return GL_DEPTH_COMPONENT24;
+	case TextureFormat::Depth32:	return GL_DEPTH_COMPONENT32;
 	}
 }
 
@@ -46,32 +55,22 @@ GLenum Engine::Graphics::TextureFormatToGLFormat(TextureFormat format)
 	switch (format)
 	{
 	default: return GL_INVALID_ENUM;
-	case TextureFormat::RGB8:			 return GL_RGB;
+	case TextureFormat::RGB8:			return GL_RGB;
 	case TextureFormat::RGBA8:
-	case TextureFormat::RGBA16F:		 return GL_RGBA;
-	case TextureFormat::RedInteger:		 return GL_RED_INTEGER;
-	case TextureFormat::Depth24Stencil8: return GL_DEPTH24_STENCIL8;
-	case TextureFormat::Cubemap:		 return GL_RGB;
+	case TextureFormat::RGBA16F:		return GL_RGBA;
+	case TextureFormat::RedInteger:		return GL_RED_INTEGER;
+	case TextureFormat::Depth16:		return GL_DEPTH_COMPONENT;
+	case TextureFormat::RenderBuffer:	return GL_DEPTH24_STENCIL8;
+	case TextureFormat::Cubemap:		return GL_RGB;
 	}
 }
 
-bool Engine::Graphics::IsDepthFormat(TextureFormat format)
+RenderTexture::RenderTexture(RenderTextureArgs args) : m_ID(GL_INVALID_VALUE), m_Args(args)
 {
-	switch (format)
-	{
-	default: return false;
-	case TextureFormat::Depth: return true;
-	}
-}
-
-RenderTexture::RenderTexture(ivec2 resolution, TextureFormat format, unsigned int samples, TexturePixelType pixelType) : m_ID(GL_INVALID_VALUE)
-{
-	m_Format = format;
-	m_Samples = samples;
-	m_PixelType = pixelType;
-	m_Resolution = resolution;
-
-	Recreate();
+	if (m_Args.Format == TextureFormat::RenderBuffer)
+		CreateRenderbuffer();
+	else
+		CreateColourTexture();
 }
 
 RenderTexture::~RenderTexture()
@@ -79,103 +78,51 @@ RenderTexture::~RenderTexture()
 	if (m_ID == GL_INVALID_VALUE)
 		return;
 
-	if (IsDepthFormat(m_Format))
-		glDeleteRenderbuffers(1, &m_ID);
-	else
-		glDeleteTextures(1, &m_ID);
+	glDeleteTextures(1, &m_ID);
 	m_ID = GL_INVALID_VALUE;
 }
 
 void RenderTexture::SetResolution(ivec2 resolution)
 {
-	if (m_Resolution == resolution)
+	if (m_Args.Resolution == resolution)
 		return;
 
-	m_Resolution = resolution;
+	m_Args.Resolution = resolution;
 	Recreate();
 }
 
 void RenderTexture::SetSamples(unsigned int samples)
 {
-	if (samples == m_Samples)
+	if (samples == m_Args.Samples)
 		return;
 
-	m_Samples = samples;
+	m_Args.Samples = samples;
 	Recreate();
 }
 
 void RenderTexture::SetFormat(TextureFormat format)
 {
-	if (format == m_Format)
+	if (format == m_Args.Format)
 		return;
 
-	if (IsDepthFormat(m_Format))
-		glDeleteRenderbuffers(1, &m_ID);
-	else
-		glDeleteTextures(1, &m_ID);
+	glDeleteTextures(1, &m_ID);
 
 	// Create in new format
-	m_Format = format;
+	m_Args.Format = format;
 	Recreate();
 }
 
 unsigned int RenderTexture::GetID() { return m_ID; }
-ivec2 RenderTexture::GetResolution() { return m_Resolution; }
-TextureFormat RenderTexture::GetFormat() { return m_Format; }
-unsigned int RenderTexture::GetSamples() { return m_Samples; }
+ivec2 RenderTexture::GetResolution() { return m_Args.Resolution; }
+TextureFormat RenderTexture::GetFormat() { return m_Args.Format; }
+unsigned int RenderTexture::GetSamples() { return m_Args.Samples; }
 
 void RenderTexture::Recreate()
 {
-	if (IsDepthFormat(m_Format))
-		CreateDepthTexture();
+	if (m_Args.Format == TextureFormat::RenderBuffer)
+		CreateRenderbuffer();
 	else
 		CreateColourTexture();
-}
-
-void RenderTexture::Bind(unsigned int textureIndex)
-{
-	if (!IsDepthFormat(m_Format))
-	{
-		glActiveTexture(GL_TEXTURE0 + textureIndex);
-		glBindTexture(GetTextureTarget(m_Format, m_Samples > 1), m_ID);
-	}
-	else
-		glBindRenderbuffer(GL_RENDERBUFFER, m_ID);		
-}
-
-void RenderTexture::Unbind()
-{
-	if (IsDepthFormat(m_Format))
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	else
-		glBindTexture(GetTextureTarget(m_Format, m_Samples > 1), 0);
-}
-
-void RenderTexture::CreateDepthTexture()
-{
-	if (m_ID == GL_INVALID_VALUE)
-		glGenRenderbuffers(1, &m_ID);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, m_ID);
-
-	if (m_Samples <= 1)
-		glRenderbufferStorage(
-			GL_RENDERBUFFER,
-			TextureFormatToGLFormat(m_Format),
-			m_Resolution.x,
-			m_Resolution.y
-		);
-	else
-		glRenderbufferStorageMultisample(
-			GL_RENDERBUFFER,
-			m_Samples,
-			TextureFormatToGLFormat(m_Format),
-			m_Resolution.x,
-			m_Resolution.y
-		);
-
-	// Unbind
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void RenderTexture::CreateColourTexture()
@@ -183,46 +130,89 @@ void RenderTexture::CreateColourTexture()
 	if (m_ID == GL_INVALID_VALUE)
 		glGenTextures(1, &m_ID);
 
-	GLenum textureTarget = GetTextureTarget(m_Format, m_Samples > 1);
-	GLenum GLFormat = TextureFormatToGLFormat(m_Format);
-	GLenum internalGLFormat = TextureFormatToInternalGLFormat(m_Format);
+	GLenum textureTarget = GetTextureTarget(m_Args.Format, m_Args.Samples > 1, m_Args.Depth);
+	GLenum GLFormat = TextureFormatToGLFormat(m_Args.Format);
+	GLenum internalGLFormat = TextureFormatToInternalGLFormat(m_Args.Format);
 	Bind();
 
-	switch (m_Format)
+	switch (m_Args.Format)
 	{
 	case TextureFormat::RGB8:
 	case TextureFormat::RGBA8:
 	case TextureFormat::RGBA16:
 	case TextureFormat::RGBA16F:
-		if (m_Samples <= 1)
+	case TextureFormat::Depth16:
+	case TextureFormat::Depth24:
+	case TextureFormat::Depth32:
+		if (m_Args.Samples <= 1)
 		{
-			glTexImage2D(
-				GL_TEXTURE_2D,		// Target
-				0,					// Mipmap Level
-				internalGLFormat,	// Internal Format
-				m_Resolution.x,		// Resolution
-				m_Resolution.y,
-				0,					// Border
-				GLFormat,			// Format
-				(GLenum)m_PixelType,// Type
-				nullptr				// Data/Pixels
-			);
+			if (m_Args.Depth.Depth <= 1) // 2D Texture
+			{
+				glTexImage2D(
+					GL_TEXTURE_2D,			// Target
+					0,						// Mipmap Level
+					internalGLFormat,		// Internal Format
+					m_Args.Resolution.x,	// Resolution
+					m_Args.Resolution.y,
+					0,						// Border
+					GLFormat,				// Format
+					(GLenum)m_Args.PixelType,// Type
+					nullptr					// Data/Pixels
+				);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+			else // 3D Texture or 2D Texture Array
+			{
+				GLenum textureTarget = m_Args.Depth.Is3D ? GL_TEXTURE_3D : GL_TEXTURE_2D_ARRAY;
+				glTexImage3D(
+					textureTarget,			// Target
+					0,						// Mipmap Level
+					internalGLFormat,		// Internal Format
+					m_Args.Resolution.x,	// Resolution
+					m_Args.Resolution.y,
+					m_Args.Depth.Depth,		// depth
+					0,						// Border
+					GLFormat,				// Format
+					(GLenum)m_Args.PixelType, // Type
+					nullptr					// Data/Pixels
+				);
+
+				glTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(textureTarget, GL_TEXTURE_BASE_LEVEL, 0);
+				glTexParameteri(textureTarget, GL_TEXTURE_MAX_LEVEL, 0);
+				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
 		}
-		else
-			glTexImage2DMultisample(
-				GL_TEXTURE_2D_MULTISAMPLE,
-				m_Samples,
-				internalGLFormat,
-				m_Resolution.x,
-				m_Resolution.y,
-				GL_TRUE				// Fixed sample locations
-			);
+		else // Multisampled
+		{
+			if (m_Args.Depth.Depth <= 1) // 2D
+				glTexImage2DMultisample(
+					GL_TEXTURE_2D_MULTISAMPLE,
+					m_Args.Samples,
+					internalGLFormat,
+					m_Args.Resolution.x,
+					m_Args.Resolution.y,
+					GL_TRUE				// Fixed sample locations
+				);
+			else // 2D Array (3D multisampling isn't a thing)
+				glTexImage3DMultisample(
+					GL_TEXTURE_2D_MULTISAMPLE_ARRAY,
+					m_Args.Samples,
+					internalGLFormat,
+					m_Args.Resolution.x,
+					m_Args.Resolution.y,
+					m_Args.Depth.Depth,
+					GL_TRUE				// Fixed sample locations
+				);
+		}
 		break;
 	case TextureFormat::Cubemap:
 		for (unsigned int i = 0; i < 6; i++)
@@ -230,8 +220,8 @@ void RenderTexture::CreateColourTexture()
 				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 				0, // Mip level
 				internalGLFormat,
-				m_Resolution.x,
-				m_Resolution.y,
+				m_Args.Resolution.x,
+				m_Args.Resolution.y,
 				0, // Border
 				GLFormat,
 				GL_FLOAT,
@@ -248,22 +238,68 @@ void RenderTexture::CreateColourTexture()
 	Unbind();
 }
 
+void RenderTexture::CreateRenderbuffer()
+{
+	if (m_ID == GL_INVALID_VALUE)
+		glGenRenderbuffers(1, &m_ID);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, m_ID);
+
+	if (m_Args.Samples <= 1)
+		glRenderbufferStorage(
+			GL_RENDERBUFFER,
+			TextureFormatToGLFormat(m_Args.Format),
+			m_Args.Resolution.x,
+			m_Args.Resolution.y
+		);
+	else
+		glRenderbufferStorageMultisample(
+			GL_RENDERBUFFER,
+			m_Args.Samples,
+			TextureFormatToGLFormat(m_Args.Format),
+			m_Args.Resolution.x,
+			m_Args.Resolution.y
+		);
+
+	// Unbind
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void RenderTexture::Bind(unsigned int textureIndex)
+{
+	if (m_Args.Format != TextureFormat::RenderBuffer)
+	{
+		glActiveTexture(GL_TEXTURE0 + textureIndex);
+		glBindTexture(GetTextureTarget(m_Args.Format, m_Args.Samples > 1, m_Args.Depth), m_ID);
+	}
+	else
+		glBindRenderbuffer(GL_RENDERBUFFER, m_ID);
+}
+
+void RenderTexture::Unbind()
+{
+	if (m_Args.Format != TextureFormat::RenderBuffer)
+		glBindTexture(GetTextureTarget(m_Args.Format, m_Args.Samples > 1, m_Args.Depth), 0);
+	else
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
 void RenderTexture::CopyTo(RenderTexture* destination)
 {
 	ivec2 outputResolution =
 	{
-		min(m_Resolution.x, destination->m_Resolution.x),
-		min(m_Resolution.y, destination->m_Resolution.y)
+		min(m_Args.Resolution.x, destination->m_Args.Resolution.x),
+		min(m_Args.Resolution.y, destination->m_Args.Resolution.y)
 	};
 
 	glCopyImageSubData(
 		m_ID,
-		GetTextureTarget(m_Format, m_Samples > 1),
+		GetTextureTarget(m_Args.Format, m_Args.Samples > 1, m_Args.Depth),
 		0,	// Mip level
 		0, 0, 0,
 
 		destination->m_ID,
-		GetTextureTarget(destination->m_Format, destination->m_Samples > 1),
+		GetTextureTarget(destination->m_Args.Format, destination->m_Args.Samples > 1, m_Args.Depth),
 		0,	// Mip level
 		0, 0, 0,
 

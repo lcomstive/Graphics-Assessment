@@ -25,4 +25,6 @@ void main()
 	input.Roughness = positionRoughness.a;
 
 	FragColour = vec4(PBRLighting(input), 1.0);
+
+	// FragColour.rgb = vec3(texture(shadowMap, vec3(TexCoords, 0)).r);
 }

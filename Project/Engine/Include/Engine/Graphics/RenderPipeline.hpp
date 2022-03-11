@@ -5,12 +5,14 @@
 #include <Engine/ResourceID.hpp>
 #include <Engine/Components/Camera.hpp>
 
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 32
 
 namespace Engine::Graphics
 {
-	class Shader; // Forward declaration
+	// Forward declarations
+	class Shader;
 	class Framebuffer;
+	class ShadowMapPass;
 
 	struct ENGINE_API RenderPipelinePass
 	{
@@ -22,13 +24,16 @@ namespace Engine::Graphics
 
 	class ENGINE_API RenderPipeline
 	{
+		ShadowMapPass* m_ShadowPass = nullptr;
+
 	protected:
 		Shader* m_CurrentShader = nullptr;
 		Framebuffer* m_PreviousPass = nullptr;
 		std::vector<RenderPipelinePass> m_RenderPasses;
 
 	public:
-		virtual ~RenderPipeline() { }
+		RenderPipeline();
+		virtual ~RenderPipeline();
 
 		void Draw(Engine::Components::Camera& camera);
 
@@ -46,5 +51,6 @@ namespace Engine::Graphics
 
 		Shader* CurrentShader();
 		Framebuffer* GetPreviousPass();
+		ShadowMapPass* GetShadowMapPass();
 	};
 }

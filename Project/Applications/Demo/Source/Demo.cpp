@@ -8,6 +8,7 @@
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Services/SceneService.hpp>
 #include <Engine/Services/ExternalService.hpp>
+#include <Engine/Graphics/Passes/ShadowMap.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 #include <Engine/Graphics/Pipelines/Deferred.hpp>
 #include <Engine/Components/Physics/Rigidbody.hpp>
@@ -104,6 +105,7 @@ void SetMaterialTextures(
 		SetMaterialTextures(child, normalMap, metalnessMap, roughnessMap);
 }
 
+Light* directionalLight = nullptr;
 void Demo::OnStart()
 {
 	Log::SetLogLevel(Log::LogLevel::All);
@@ -144,7 +146,7 @@ void Demo::OnStart()
 
 	// Load external service
 	Log::Info("Loading external service...");
-	Application::GetService<ExternalServices>()->Add(appDir + ExternalServicePath);
+	// Application::GetService<ExternalServices>()->Add(appDir + ExternalServicePath);
 
 	Log::Info("Finished demo startup");
 }
@@ -194,6 +196,12 @@ void Demo::ResetScene()
 	cameraObj->GetTransform()->Rotation = { radians(-30.0f), radians(-90.0f), 0 }; // From euler angles
 	CreatedObjects.emplace_back(cameraObj);
 
+	GameObject* directionalLightGO = new GameObject(scene, "Directional Light");
+	directionalLight = directionalLightGO->AddComponent<Light>();
+	directionalLight->Type = LightType::Directional;
+	directionalLight->Colour = vec3(1);
+	directionalLight->GetTransform()->Rotation = { radians(-60.0), 0, 0 };
+
 #if CERBERUS
 	// Cerberus //
 	Model* cerberusModel = ResourceManager::Get<Model>(CerberusModel);
@@ -223,7 +231,7 @@ void Demo::ResetScene()
 
 	Material lightMaterial;
 
-	const int LightCount = 50;
+	const int LightCount = 0;
 	for (int i = 0; i < LightCount; i++)
 	{
 		lightMaterial.Albedo =
@@ -323,6 +331,9 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_F1)) Application::EnableGizmos(false);
 	if (Input::IsKeyPressed(GLFW_KEY_F2)) Application::EnableGizmos(true);
 
+	if (Input::IsKeyPressed(GLFW_KEY_LEFT_ALT)) directionalLight->CastShadows = !directionalLight->CastShadows;
+	if (Input::IsKeyPressed(GLFW_KEY_O)) Camera::GetMainCamera()->Orthographic = !Camera::GetMainCamera()->Orthographic;
+
 #if CERBERUS
 	for (LightData data : CerberusLights)
 	{
@@ -398,29 +409,53 @@ void Demo::OnDraw()
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
 		ImGui::Text("Samples: %d", Renderer::GetSamples());
 
-		static const char* TonemapperNames[] = { "None", "Aces", "Reinhard" };
-		if (ImGui::BeginCombo("Tonemapper", TonemapperNames[(int)PP_Tonemapping->Tonemapper]))
-		{
-			for (int i = 0; i < 3; i++)
-				if (ImGui::Selectable(TonemapperNames[i], (int)PP_Tonemapping->Tonemapper == i))
-					PP_Tonemapping->Tonemapper = (Tonemapper)i;
-				ImGui::EndCombo();
-		}
-		ImGui::DragFloat("Gamma", &PP_Tonemapping->Gamma, 0.05f, 1.0f, 3.0f);
-			ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
-
-			if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
-				ImGui::Text("PHYSICS PAUSED");
+		if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
+			ImGui::Text("PHYSICS PAUSED");
 
 		if (ImGui::Button("Reload External Service"))
 			Application::GetService<ExternalServices>()->Reload(Application::AssetDir + ExternalServicePath);
 	}
 	ImGui::End();
 
-	ImGui::Begin("Services");
-	auto& services = Application::GetAllServices();
-	for (Service* service : services)
-		ImGui::Text(" - %s", typeid(*service).name());
+	static bool servicesOpen = true;
+	if (ImGui::Begin("Services", &servicesOpen))
+	{
+		auto& services = Application::GetAllServices();
+		for (Service* service : services)
+			ImGui::Text(" - %s", typeid(*service).name());
+	}
+	ImGui::End();
+
+	static bool graphicsOpen = true;
+	if (ImGui::Begin("Graphics"))
+	{
+		static const char* TonemapperNames[] = { "None", "Aces", "Reinhard" };
+		if (ImGui::BeginCombo("Tonemapper", TonemapperNames[(int)PP_Tonemapping->Tonemapper]))
+		{
+			for (int i = 0; i < 3; i++)
+				if (ImGui::Selectable(TonemapperNames[i], (int)PP_Tonemapping->Tonemapper == i))
+					PP_Tonemapping->Tonemapper = (Tonemapper)i;
+			ImGui::EndCombo();
+		}
+		ImGui::DragFloat("Gamma", &PP_Tonemapping->Gamma, 0.05f, 1.0f, 3.0f);
+		ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
+
+		static int ShadowMapResIndex = 1; // Hardcoded default value in RenderPipeline.cpp is 1024x1024
+		static const char* ShadowMapResNames[] = { "512x512", "1024x1024", "2048x2048", "4096x4096" };
+		static glm::vec2 ShadowMapResolutions[] = { { 512, 512 }, { 1024, 1024 }, { 2048, 2048 }, { 4096, 4096 } };
+		if (ImGui::BeginCombo("Shadow Map Res", ShadowMapResNames[ShadowMapResIndex]))
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				if (ImGui::Selectable(ShadowMapResNames[i], i == ShadowMapResIndex))
+				{
+					Renderer::GetPipeline()->GetShadowMapPass()->SetResolution(ShadowMapResolutions[i]);
+					ShadowMapResIndex = i;
+				}
+			}
+			ImGui::EndCombo();
+		}
+	}
 	ImGui::End();
 }
 

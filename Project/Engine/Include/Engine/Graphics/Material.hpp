@@ -88,7 +88,15 @@ namespace Engine::Graphics
 		/// </summary>
 		ResourceID AmbientOcclusionMap = InvalidResourceID;
 
+		/// <summary>
+		/// Draw attached mesh in wireframe mode
+		/// </summary>
 		bool Wireframe = false;
+
+		/// <summary>
+		/// Attached mesh can cast shadows
+		/// </summary>
+		bool CanCastShadows = true;
 
 		void FillShader(Shader* shader);
 		void Serialize(DataStream& stream);

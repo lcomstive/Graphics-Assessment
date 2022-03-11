@@ -12,15 +12,7 @@ using namespace Engine;
 using namespace Engine::Graphics;
 using namespace Engine::Components;
 
-const vec3 WorldUp = { 0, 1, 0 };
-
-Camera::Camera() :
-	m_Up(0, 1, 0),
-	m_Right(1, 0, 0),
-	m_Forward(0, 0, 1),
-	m_ViewMatrix(1.0f),
-	m_GlobalPosition(0),
-	m_ProjectionMatrix(1.0f)
+void Camera::Added()
 {
 	if (!Renderer::GetMainCamera())
 		Renderer::SetMainCamera(this);
@@ -34,14 +26,10 @@ mat4 Camera::GetProjectionMatrix() { return m_ProjectionMatrix; }
 
 void Camera::FillShader(Shader* shader)
 {
-	shader->Set("camera.Position", m_GlobalPosition);
+	shader->Set("camera.Position", GetTransform()->GetGlobalPosition());
 	shader->Set("camera.ViewMatrix", GetViewMatrix());
 	shader->Set("camera.ProjectionMatrix", GetProjectionMatrix());
 }
-
-vec3 Camera::GetUpDirection() { return m_Up; }
-vec3 Camera::GetRightDirection() { return m_Right; }
-vec3 Camera::GetForwardDirection() { return m_Forward; }
 
 void Camera::Removed()
 {
@@ -54,21 +42,12 @@ void Camera::Update(float deltaTime)
 {
 	Transform* transform = GetTransform();
 
-	m_GlobalPosition = transform->GetGlobalPosition();
-
-	// Get direction camera is facing
-	m_Forward = normalize(vec3
-		{
-			cos(transform->Rotation.y) * cos(transform->Rotation.x),
-			sin(transform->Rotation.x),
-			sin(transform->Rotation.y) * cos(transform->Rotation.x)
-		});
-
-	m_Right = normalize(cross(m_Forward, WorldUp));
-	m_Up = normalize(cross(m_Right, m_Forward));
-
 	// Create view matrix
-	m_ViewMatrix = lookAt(transform->Position, transform->Position + m_Forward, m_Up);
+	m_ViewMatrix = lookAt(
+		transform->GetGlobalPosition(),
+		transform->GetGlobalPosition() + transform->Forward(),
+		transform->Up()
+	);
 
 	// Create projection matrix
 	ivec2 res = Renderer::GetResolution();

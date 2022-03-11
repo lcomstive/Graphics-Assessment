@@ -11,9 +11,14 @@ namespace Engine::Graphics
 	{
 		TextureFormat Format = TextureFormat::RGBA8;
 		TexturePixelType PixelType = TexturePixelType::UnsignedByte;
+		RenderTextureDepth DepthInfo = {};
 
 		FramebufferAttachment() {}
-		FramebufferAttachment(TextureFormat format, TexturePixelType pixelType = TexturePixelType::UnsignedByte) : Format(format), PixelType(pixelType) { }
+		FramebufferAttachment(
+			TextureFormat format,
+			TexturePixelType pixelType = TexturePixelType::UnsignedByte,
+			RenderTextureDepth depthInfo = {})
+			: Format(format), PixelType(pixelType), DepthInfo(depthInfo) { }
 	};
 
 	struct ENGINE_API FramebufferSpec

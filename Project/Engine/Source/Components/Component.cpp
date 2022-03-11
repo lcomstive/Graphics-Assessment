@@ -35,3 +35,14 @@ Rigidbody* Component::GetRigidbody()
 void PhysicsComponent::Added()  { GetGameObject()->GetScene()->GetPhysics().AddPhysicsComponent(this); }
 void PhysicsComponent::Removed() { GetGameObject()->GetScene()->GetPhysics().RemovePhysicsComponent(this); }
 #pragma endregion
+
+void Engine::Components::OverrideComponentInternals(
+	Component* component,
+	GameObject* go,
+	Transform* transform,
+	Rigidbody* rb)
+{
+	component->m_CachedRB = rb;
+	component->m_GameObject = go;
+	component->m_CachedTransform = transform;
+}

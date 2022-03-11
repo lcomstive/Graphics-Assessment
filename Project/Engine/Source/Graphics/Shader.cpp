@@ -275,9 +275,11 @@ void Shader::CacheUniformLocations()
 	int uniformCount = 0;
 	glGetProgramiv(m_Program, GL_ACTIVE_UNIFORMS, &uniformCount);
 
-	// Log::Debug("Caching " + to_string(uniformCount) + " shader uniforms");
 	m_Uniforms.clear();
 	m_Uniforms.resize(uniformCount);
+
+	m_NamedUniforms.clear();
+	m_NamedUniforms.reserve(uniformCount);
 
 	for (GLuint i = 0; i < (GLuint)uniformCount; i++)
 	{
@@ -292,13 +294,15 @@ void Shader::CacheUniformLocations()
 #if USE_STRING_ID
 		m_NamedUniforms.emplace(make_pair(StringId(m_Uniforms[i].Name.c_str()).GetValue(), &m_Uniforms[i]));
 #else
-		m_NamedUniforms.emplace(make_pair(m_Uniforms[i].Name, m_Uniforms));
+		m_NamedUniforms.emplace(make_pair(m_Uniforms[i].Name, &m_Uniforms[i]));
 #endif
 
 		m_Uniforms[i].Location = glGetUniformLocation(m_Program, m_Uniforms[i].Name.c_str());
 
 		// Log::Debug(" [" + to_string(m_Uniforms[i].Location) + "] " + m_Uniforms[i].Name);
 	}
+
+	Log::Debug("Cached " + to_string(uniformCount) + " shader uniforms");
 }
 
 void Shader::Bind()
@@ -344,7 +348,7 @@ void Shader::Set(string locationName, mat4 value)	{ ShaderUniform* uniform = Get
 ShaderUniform* Shader::GetUniformInfo(int location)
 {
 	location++; // First cached uniform is an invalid one
-	return (location >= 0 && location < m_Uniforms.size() ? &m_Uniforms[location] : nullptr);
+	return (location >= 0 && location < m_Uniforms.size() - 1 ? &m_Uniforms[location] : nullptr);
 }
 
 ShaderUniform* Shader::GetUniformInfo(std::string& locationName)

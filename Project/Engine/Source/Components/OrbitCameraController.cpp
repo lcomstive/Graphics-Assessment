@@ -23,13 +23,13 @@ void OrbitCameraController::Update(float deltaTime)
 		speed = MoveSpeed / 4.0f;
 	speed *= deltaTime;
 
-	if (Input::IsKeyDown(GLFW_KEY_A)) transform->Position -= m_Camera->GetRightDirection() * speed;
-	if (Input::IsKeyDown(GLFW_KEY_D)) transform->Position += m_Camera->GetRightDirection() * speed;
-	if (Input::IsKeyDown(GLFW_KEY_W)) transform->Position += m_Camera->GetForwardDirection() * speed;
-	if (Input::IsKeyDown(GLFW_KEY_S)) transform->Position -= m_Camera->GetForwardDirection() * speed;
+	if (Input::IsKeyDown(GLFW_KEY_A)) transform->Position -= transform->Right() * speed;
+	if (Input::IsKeyDown(GLFW_KEY_D)) transform->Position += transform->Right() * speed;
+	if (Input::IsKeyDown(GLFW_KEY_W)) transform->Position += transform->Forward() * speed;
+	if (Input::IsKeyDown(GLFW_KEY_S)) transform->Position -= transform->Forward() * speed;
 
-	if (Input::IsKeyDown(GLFW_KEY_Q)) transform->Position -= m_Camera->GetUpDirection() * speed;
-	if (Input::IsKeyDown(GLFW_KEY_E)) transform->Position += m_Camera->GetUpDirection() * speed;
+	if (Input::IsKeyDown(GLFW_KEY_Q)) transform->Position -= transform->Up() * speed;
+	if (Input::IsKeyDown(GLFW_KEY_E)) transform->Position += transform->Up() * speed;
 
 	m_Camera->FieldOfView = std::clamp(m_Camera->FieldOfView - Input::GetScrollDelta(), 10.0f, 120.0f);
 

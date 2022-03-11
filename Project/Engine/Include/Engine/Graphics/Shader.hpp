@@ -47,7 +47,7 @@ namespace Engine::Graphics
 #if USE_STRING_ID
 		EngineUnorderedMap<StringId::Storage, ShaderUniform*> m_NamedUniforms;
 #else
-		EngineUnorderedMap<std::string&, ShaderUniform&> m_NamedUniforms;
+		EngineUnorderedMap<std::string, ShaderUniform*> m_NamedUniforms;
 #endif
 
 		void Destroy();

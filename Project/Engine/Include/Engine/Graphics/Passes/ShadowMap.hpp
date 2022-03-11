@@ -10,6 +10,7 @@ namespace Engine::Graphics
 		RenderPipelinePass m_Pass;
 		Shader* m_Shader = nullptr;
 
+		void SetBorder();
 		void DrawCallback(Framebuffer* previous);
 
 	public:
@@ -20,5 +21,7 @@ namespace Engine::Graphics
 		ENGINE_API void SetResolution(glm::ivec2 resolution);
 
 		ENGINE_API RenderPipelinePass& GetPipelinePass();
+
+		ENGINE_API RenderTexture* GetTexture();
 	};
 }

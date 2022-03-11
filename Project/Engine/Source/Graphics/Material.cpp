@@ -48,6 +48,7 @@ void Material::FillShader(Shader* shader)
 	BindTexture(2, "material.RoughnessMap", RoughnessMap, shader);
 	BindTexture(3, "material.MetalnessMap", MetalnessMap, shader);
 	BindTexture(4, "material.AmbientOcclusionMap", AmbientOcclusionMap, shader);
+	// Texture Slot 5 reserved for Shadow Map
 }
 
 void Material::Serialize(DataStream& stream)

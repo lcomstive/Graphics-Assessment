@@ -19,10 +19,13 @@ namespace Engine::Graphics
 		Cubemap,
 
 		// Depth & Stencil
-		Depth24Stencil8,
+		Depth16,
+		Depth24,
+		Depth32,
+		RenderBuffer, // Creates renderbuffer object with Depth24_Stencil8 format
 
 		// Aliases
-		Depth = Depth24Stencil8
+		Depth = RenderBuffer
 	};
 
 	enum class ENGINE_API TexturePixelType
@@ -36,30 +39,46 @@ namespace Engine::Graphics
 		UnsignedInt		= GL_UNSIGNED_INT
 	};
 
-	ENGINE_API bool IsDepthFormat(TextureFormat format);
-	ENGINE_API unsigned int GetTextureTarget(TextureFormat format, bool multisampled = false);
+	struct RenderTextureDepth
+	{
+		/// <summary>
+		/// When <= 1 generated texture is 2D.
+		/// If larger than 1 texture is 3D or 2D Array.
+		/// </summary>
+		unsigned int Depth = 1;
+
+		/// <summary>
+		/// If true generates 3D texture.
+		/// When false, generates 2D texture array.
+		/// </summary>
+		bool Is3D = false;
+	};
+
+	ENGINE_API unsigned int GetTextureTarget(TextureFormat format, bool multisampled = false, RenderTextureDepth depth = {});
 	ENGINE_API unsigned int TextureFormatToGLFormat(TextureFormat format);
 	ENGINE_API unsigned int TextureFormatToInternalGLFormat(TextureFormat format);
 
+	struct RenderTextureArgs
+	{
+		unsigned int Samples = 1;
+		glm::ivec2 Resolution = glm::ivec2(1, 1);
+		TextureFormat Format = TextureFormat::RGBA8;
+		TexturePixelType PixelType = TexturePixelType::UnsignedByte;
+		RenderTextureDepth Depth;
+	};
+
 	class RenderTexture
 	{
-		glm::ivec2 m_Resolution;
-		TexturePixelType m_PixelType;
-		unsigned int m_ID, m_Samples = 1;
-		TextureFormat m_Format = TextureFormat::RGBA8;
+		unsigned int m_ID;
+		RenderTextureArgs m_Args;
 
 		void Recreate();
 
-		void CreateDepthTexture();
+		void CreateRenderbuffer();
 		void CreateColourTexture();
 
 	public:
-		ENGINE_API RenderTexture(
-			glm::ivec2 resolution,
-			TextureFormat format = TextureFormat::RGBA8,
-			unsigned int samples = 1,
-			TexturePixelType pixelType = TexturePixelType::UnsignedByte
-			);
+		ENGINE_API RenderTexture(const RenderTextureArgs args);
 		ENGINE_API ~RenderTexture();
 
 		ENGINE_API unsigned int GetID();

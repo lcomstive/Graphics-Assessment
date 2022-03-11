@@ -83,7 +83,7 @@ void Application::Run()
 
 #ifndef NDEBUG
 	// Enable gizmos by default in debug mode
-	EnableGizmos(true);
+	// EnableGizmos(true);
 #endif
 
 	// Setup Render Pipeline

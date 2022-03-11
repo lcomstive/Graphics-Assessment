@@ -22,11 +22,18 @@ void Framebuffer::Destroy()
 	if (m_ID == GL_INVALID_VALUE)
 		return;
 
+	Log::Debug("Destroying framebuffer [" + to_string(m_ID) + "]");
+
 	glDeleteFramebuffers(1, &m_ID);
 	m_ID = GL_INVALID_VALUE;
 
 	for (auto& texture : m_ColourAttachments)
+	{
+		if (texture == m_DepthAttachment)
+			m_DepthAttachment = nullptr;
+
 		delete texture;
+	}
 	m_ColourAttachments.clear();
 
 	if (m_DepthAttachment)
@@ -47,13 +54,15 @@ void Framebuffer::Create()
 
 	for (unsigned int i = 0; i < m_Specs.Attachments.size(); i++)
 	{
-		if (IsDepthFormat(m_Specs.Attachments[i].Format))
+		if (m_Specs.Attachments[i].Format == TextureFormat::RenderBuffer)
 		{
 			RenderTexture* texture = new RenderTexture(
-				m_Specs.Resolution,
-				m_Specs.Attachments[i].Format,
-				m_Specs.Samples,
-				m_Specs.Attachments[i].PixelType
+				{
+					m_Specs.Samples,
+					m_Specs.Resolution,
+					m_Specs.Attachments[i].Format,
+					m_Specs.Attachments[i].PixelType
+				}
 			);
 			m_DepthAttachment = texture;
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, texture->GetID());
@@ -61,22 +70,62 @@ void Framebuffer::Create()
 		else
 		{
 			RenderTexture* texture = new RenderTexture(
-				m_Specs.Resolution,
-				m_Specs.Attachments[i].Format,
-				m_Specs.Samples,
-				m_Specs.Attachments[i].PixelType
+				{
+					m_Specs.Samples,
+					m_Specs.Resolution,
+					m_Specs.Attachments[i].Format,
+					m_Specs.Attachments[i].PixelType,
+					m_Specs.Attachments[i].DepthInfo
+				}
 			);
+			texture->Bind();
+
 			m_ColourAttachments.emplace_back(texture);
 
-			if (m_Specs.Attachments[i].Format != TextureFormat::Cubemap)
-				glFramebufferTexture2D(
-					GL_FRAMEBUFFER,
-					(GLenum)(GL_COLOR_ATTACHMENT0 + (m_ColourAttachments.size() - 1)),
-					GetTextureTarget(m_Specs.Attachments[i].Format, m_Specs.Samples > 1),
-					texture->GetID(),
-					0 // Mipmap Level
-				);
-			else
+			GLenum attachmentType = (GLenum)(GL_COLOR_ATTACHMENT0 + (m_ColourAttachments.size() - 1));
+			if (m_Specs.Attachments[i].Format == TextureFormat::Depth16 ||
+				m_Specs.Attachments[i].Format == TextureFormat::Depth24 ||
+				m_Specs.Attachments[i].Format == TextureFormat::Depth32)
+				attachmentType = GL_DEPTH_ATTACHMENT;
+
+			if (attachmentType == GL_DEPTH_ATTACHMENT && !m_DepthAttachment)
+				m_DepthAttachment = texture;
+
+			int depth3D = 0;
+			GLenum textureTarget = GetTextureTarget(m_Specs.Attachments[i].Format, m_Specs.Samples > 1, m_Specs.Attachments[i].DepthInfo);
+			switch (m_Specs.Attachments[i].Format)
+			{
+			default:
+				if (m_Specs.Attachments[i].DepthInfo.Depth <= 1)
+					glFramebufferTexture2D(
+						GL_FRAMEBUFFER,
+						attachmentType,
+						textureTarget,
+						texture->GetID(),
+						0 // Mipmap Level
+					);
+				else if (m_Specs.Attachments[i].DepthInfo.Is3D)
+					glFramebufferTexture3D(
+						GL_FRAMEBUFFER,
+						attachmentType,
+						textureTarget,
+						texture->GetID(),
+						0, // Mipmap level
+						0  // Z Offset - NOT SURE IF THIS SHOULD BE ZERO??
+					);
+				else
+				{
+					for (unsigned int j = 0; j < m_Specs.Attachments[i].DepthInfo.Depth; j++)
+						glFramebufferTextureLayer(
+							GL_FRAMEBUFFER,
+							attachmentType,
+							texture->GetID(),
+							0, // Mipmap level
+							j  // Array layer
+						);
+				}
+				break;
+			case TextureFormat::Cubemap:
 				for (int i = 0; i < 6; i++)
 					glFramebufferTexture2D(
 						GL_FRAMEBUFFER,
@@ -85,6 +134,10 @@ void Framebuffer::Create()
 						texture->GetID(),
 						0 // Mipmap level
 					);
+				break;
+			}
+
+			texture->Unbind();
 		}
 	}
 
@@ -96,11 +149,18 @@ void Framebuffer::Create()
 	if (colourBuffers.size() > 1)
 		glDrawBuffers((GLsizei)colourBuffers.size(), colourBuffers.data());
 	else if (colourBuffers.empty())
+	{
+		glReadBuffer(GL_NONE);
 		glDrawBuffer(GL_NONE); // Only depth-pass
+	}
 
 	// Finalise
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
 		Log::Error("Failed to create framebuffer");
+	Log::Assert(framebufferStatus == GL_FRAMEBUFFER_COMPLETE, "OpenGL Framebuffer Error: " + to_string(framebufferStatus));
+
+	Log::Debug("Created framebuffer [" + to_string(m_ID) + "][" + to_string(m_Specs.Attachments.size()) + " attachments]");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -173,6 +233,11 @@ void Framebuffer::Bind()
 {
 	if (m_ID == GL_INVALID_VALUE)
 		Create();
+
+#ifndef NDEBUG
+	GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	Log::Assert(framebufferStatus == GL_FRAMEBUFFER_COMPLETE, "OpenGL Framebuffer Error: " + to_string(framebufferStatus));
+#endif
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ID);
 	glViewport(0, 0, m_Specs.Resolution.x, m_Specs.Resolution.y);

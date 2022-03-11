@@ -2,31 +2,78 @@
 #define _INCLUDE_LIGHT_
 #include "#ASSET_DIR/Shaders/Include/Camera.inc"
 
-const int MAX_LIGHTS = 100;
+const int MAX_LIGHTS = 32;
+const int MaxLightViews = 1;
+
+uniform sampler2DArray shadowMap;
+
+#define LIGHT_POINT 		0
+#define LIGHT_SPOT 			1
+#define LIGHT_DIRECTIONAL 	2
 
 struct Light
 {
-	vec3 Position;
+	int Type;
 	vec3 Colour;
 	float Radius;
-	float Intensity;
-};
-
-struct DirectionalLight
-{
+	vec3 Position;
 	vec3 Direction;
-	vec3 Colour;
+	float Intensity;
+	bool CastShadows;
+
+	int ShadowMapIndex[MaxLightViews];
+	mat4 LightSpaceMatrix[MaxLightViews];
 };
 
 uniform int lightCount = 0;
 uniform Light lights[MAX_LIGHTS];
 uniform vec3 ambientLighting = vec3(0.1, 0.1, 0.1);
 
+// Returns a value between [0.0-1.0] as a percentage value OUT of shadow.
+// 1.0 = Not in shadow at all
+// 0.0 = Completely covered by shadow
+float GetShadowAmount(int lightIndex, int viewIndex, vec3 surfaceNormal, vec3 fragPos)
+{
+	if(lights[lightIndex].ShadowMapIndex[viewIndex] < 0)
+		return 1.0; // Not in shadow
+	vec4 lightSpaceCoords = lights[lightIndex].LightSpaceMatrix[viewIndex] * vec4(fragPos, 1.0);
+	vec3 normalDeviceCoords = lightSpaceCoords.xyz / lightSpaceCoords.w;
+	normalDeviceCoords = normalDeviceCoords * 0.5 + 0.5; // Maps range [-1,1] to [0,1]
+
+	if(normalDeviceCoords.z > 1.0)
+		return 1.0; // Outside of texture coordinates, no shadow
+
+	float shadow = 0.0;
+	float fragDepth = normalDeviceCoords.z;
+	float bias = max(0.005 * (1.0 - dot(surfaceNormal, lights[lightIndex].Direction)), 0.005);
+
+#if 0
+	// Percentage Closer Filtering
+	vec3 texelSize = 1.0 / textureSize(shadowMap, 0).xyz;
+	vec3 textureCoords = vec3(normalDeviceCoords.xy, lights[lightIndex].ShadowMapIndex[viewIndex]);
+	for(int x = -1; x <= 1; x++)
+	{
+		for(int y = -1; y <= 1; y++)
+		{
+			float pcfDepth = texture(shadowMap, textureCoords + vec3(x, y, 0) * texelSize).r;
+			shadow += fragDepth - bias > pcfDepth ? 1.0 : 0.0;
+		}
+	}
+	shadow /= 9.0;
+#else
+	vec3 textureCoords = vec3(normalDeviceCoords.xy, lights[lightIndex].ShadowMapIndex[viewIndex]);
+	float currentDepth = texture(shadowMap, textureCoords).r;
+	shadow = fragDepth - bias > currentDepth ? 1.0 : 0.0;
+#endif
+
+	return shadow; 
+}
+
 vec3 BlinnPhong(vec3 albedo, vec3 fragPosition, vec3 normals)
 {
 	vec3 lighting = albedo * ambientLighting;
 	vec3 viewDir = normalize(camera.Position - fragPosition);
-	for(int i = 0; i < lightCount; i++)
+	for(int i = 0; i < min(lightCount, MAX_LIGHTS); i++)
 	{
 		float distance = length(lights[i].Position - fragPosition);
 		if(distance >= lights[i].Radius)

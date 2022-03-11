@@ -8,6 +8,7 @@
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/SceneService.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
+#include <Engine/Graphics/Passes/ShadowMap.hpp>
 
 using namespace glm;
 using namespace std;
@@ -15,6 +16,20 @@ using namespace Engine;
 using namespace Engine::Services;
 using namespace Engine::Graphics;
 using namespace Engine::Components;
+
+const ivec2 ShadowMapResolution = { 1024, 1024 };
+
+RenderPipeline::RenderPipeline()
+{
+	m_ShadowPass = new ShadowMapPass(ShadowMapResolution);
+
+	AddPass(m_ShadowPass->GetPipelinePass());
+}
+
+RenderPipeline::~RenderPipeline()
+{
+	delete m_ShadowPass;
+}
 
 void RenderPipeline::Draw(Camera& camera)
 {
@@ -105,17 +120,10 @@ RenderTexture* RenderPipeline::GetOutputAttachment(unsigned int index)
 void RenderPipeline::OnResized(ivec2 resolution)
 {
 	for (RenderPipelinePass& pass : m_RenderPasses)
-	{
 		if (pass.ResizeWithScreen)
-		{
-			if (!pass.Pass)
-			{
-				Log::Error("WAIT");
-			}
 			pass.Pass->SetResolution(resolution);
-		}
-	}
 }
 
 Shader* RenderPipeline::CurrentShader() { return m_CurrentShader; }
 Framebuffer* RenderPipeline::GetPreviousPass() { return m_PreviousPass; }
+ShadowMapPass* RenderPipeline::GetShadowMapPass() { return m_ShadowPass; }

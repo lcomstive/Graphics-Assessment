@@ -9,7 +9,7 @@ using namespace std::chrono_literals; // seconds in literal
 // Default arguments
 ApplicationArgs AppArgs =
 {
-	true,			// VSync
+	false,			// VSync
 	1,				// Samples
 	"Application",	// Title
 	{ 1280, 720 },	// Resolution

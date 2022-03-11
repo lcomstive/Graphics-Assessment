@@ -61,14 +61,21 @@ vec3 PBRLighting(PBRInput input)
 	F0 = mix(F0, input.Albedo, input.Metalness);
 
 	vec3 Lo = vec3(0.0);
-	for(int i = 0; i < lightCount; i++)
+	for(int i = 0; i < min(lightCount, MAX_LIGHTS); i++)
 	{
 		float dist = length(lights[i].Position - input.WorldPos);
-		if(dist > lights[i].Radius)
+
+		if(lights[i].Type == LIGHT_DIRECTIONAL)
+			dist = 0.0;
+		
+		if(lights[i].Type != LIGHT_DIRECTIONAL && dist > lights[i].Radius)
 			continue;
 		
 		vec3 L = normalize(lights[i].Position - input.WorldPos);
 		vec3 H = normalize(viewDir + L);
+
+		if(lights[i].Type == LIGHT_DIRECTIONAL)
+			dist = 0.0;
 
 		const float Linear = 0.7;
 		const float Quadratic = 1.8;
@@ -86,12 +93,17 @@ vec3 PBRLighting(PBRInput input)
 		float denominator = 4.0 * max(dot(input.Normals, viewDir), 0.0) * max(dot(input.Normals, L), 0.0) + 0.0001;
 		vec3 specular = numerator / denominator;
 
+		float shadow = 0.0; // No shadow
+		
+		if(lights[i].Type == LIGHT_DIRECTIONAL && lights[i].CastShadows)
+			shadow = GetShadowAmount(i, 0, input.Normals, input.WorldPos);
+
 		vec3 kS = F;
 		vec3 kD = vec3(1.0) - kS;
 		kD *= 1.0 - input.Metalness;
 
 		float NdotL = max(dot(input.Normals, L), 0.0);
-		Lo += (kD * input.Albedo / PBR_PI + specular) * radiance * NdotL;
+		Lo += (kD * input.Albedo / PBR_PI + specular) * radiance * NdotL * (1.0 - shadow);
 	}
 	
 	vec3 ambient = vec3(0.001) * input.Albedo;

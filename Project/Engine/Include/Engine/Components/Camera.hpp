@@ -9,8 +9,9 @@ namespace Engine::Components
 {
 	struct Camera : public Component
 	{
-		ENGINE_API Camera();
-
+		/// <summary>
+		/// Vertical field of view (doesn't affect orthographic cameras)
+		/// </summary>
 		float FieldOfView = 60.0f;
 
 		float ClipNear = 0.1f;
@@ -22,9 +23,6 @@ namespace Engine::Components
 		Graphics::RenderTexture* RenderTarget = nullptr;
 
 		ENGINE_API glm::mat4 GetViewMatrix();
-		ENGINE_API glm::vec3 GetUpDirection();
-		ENGINE_API glm::vec3 GetRightDirection();
-		ENGINE_API glm::vec3 GetForwardDirection();
 		ENGINE_API glm::mat4 GetProjectionMatrix();
 		
 		ENGINE_API void FillShader(Graphics::Shader* shader);
@@ -32,13 +30,18 @@ namespace Engine::Components
 		ENGINE_API void SetMainCamera();
 		ENGINE_API static Camera* GetMainCamera();
 
-	protected:
-		ENGINE_API virtual void Removed() override;
+		/// <summary>
+		/// Recalculates view & projection matrices
+		/// </summary>
+		/// <param name="deltaTime">Unused</param>
 		ENGINE_API virtual void Update(float deltaTime) override;
 
+	protected:
+		ENGINE_API virtual void Added() override;
+		ENGINE_API virtual void Removed() override;
+
 	private:
-		glm::mat4 m_ViewMatrix;
-		glm::mat4 m_ProjectionMatrix;
-		glm::vec3 m_GlobalPosition, m_Forward, m_Right, m_Up;
+		glm::mat4 m_ViewMatrix = glm::mat4(1.0f);
+		glm::mat4 m_ProjectionMatrix = glm::mat4(1.0f);
 	};
 }
