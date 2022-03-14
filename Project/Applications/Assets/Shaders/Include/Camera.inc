@@ -5,6 +5,9 @@ struct Camera
 	vec3 Position;
 	mat4 ViewMatrix;
 	mat4 ProjectionMatrix;
+
+	float FarPlane;
+	float NearPlane;
 };
 
 uniform Camera camera;

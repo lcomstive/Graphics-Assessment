@@ -14,5 +14,7 @@ namespace Engine::Graphics::Pipelines
 	public:
 		ENGINE_API ForwardRenderPipeline();
 		ENGINE_API ~ForwardRenderPipeline();
+
+		virtual ENGINE_API Framebuffer* GetMainMeshPass() override;
 	};
 }

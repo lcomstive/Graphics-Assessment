@@ -95,6 +95,8 @@ DeferredRenderPipeline::~DeferredRenderPipeline()
 	delete m_LightingPass;
 }
 
+Framebuffer* DeferredRenderPipeline::GetMainMeshPass() { return m_MeshPass; }
+
 void DeferredRenderPipeline::MeshPass(Framebuffer* previous)
 {
 	glDisable(GL_BLEND);
@@ -108,7 +110,6 @@ void DeferredRenderPipeline::MeshPass(Framebuffer* previous)
 	Renderer::Draw(args);
 }
 
-const unsigned int MaxLights = 16;
 void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

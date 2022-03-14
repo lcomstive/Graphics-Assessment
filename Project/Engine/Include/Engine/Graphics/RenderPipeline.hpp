@@ -52,5 +52,6 @@ namespace Engine::Graphics
 		Shader* CurrentShader();
 		Framebuffer* GetPreviousPass();
 		ShadowMapPass* GetShadowMapPass();
+		virtual Framebuffer* GetMainMeshPass() { return GetPassAt(0); }
 	};
 }

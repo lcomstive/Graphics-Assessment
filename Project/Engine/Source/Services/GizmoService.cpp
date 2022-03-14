@@ -42,14 +42,22 @@ void GizmoService::DrawCallback(Framebuffer* previous)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	Framebuffer* meshPass = Renderer::GetPipeline()->GetPassAt(0);
+	Framebuffer* meshPass = Renderer::GetPipeline()->GetMainMeshPass();
 
 	// Copy depth buffer to this pass
-	if (meshPass)
+	if (meshPass && meshPass->HasDepthAttachment())
 		meshPass->BlitTo(m_Pass.Pass, GL_DEPTH_BUFFER_BIT);
 	// Copy colour buffer to this path
-	if (previous)
-		previous->BlitTo(m_Pass.Pass, GL_COLOR_BUFFER_BIT);
+	if (previous && previous->ColourAttachmentCount() > 0)
+	{
+		// Check for valid format before blitting
+		TextureFormat format = previous->GetColourAttachment(0)->GetFormat();
+		if(format == TextureFormat::RGB8 ||
+			format == TextureFormat::RGBA8 ||
+			format == TextureFormat::RGBA16 ||
+			format == TextureFormat::RGBA16F)
+			previous->BlitTo(m_Pass.Pass, GL_COLOR_BUFFER_BIT);
+	}
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -1,8 +1,14 @@
 #pragma once
 #include <Engine/Api.hpp>
 
-#define USE_STRING_ID	1 // Use hashing to map strings to IDs
+
+#ifdef NDEBUG // Release mode
 #define USE_FASTER_MAPS 1 // Use robin_hood instead of stl unordered_maps
+#define USE_STRING_ID	1 // Use hashing to map strings to IDs
+#else
+#define USE_FASTER_MAPS 0
+#define USE_STRING_ID	0
+#endif
 
 #if USE_FASTER_MAPS
 #include <robin_hood.h>

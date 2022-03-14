@@ -41,7 +41,7 @@ vector<GameObject*> CreatedObjects;
 bool DeferredRenderer = false;
 
 // Main Model
-#define CERBERUS	1
+#define CERBERUS	0
 #define SPONZA		0
 
 #if CERBERUS
@@ -200,7 +200,52 @@ void Demo::ResetScene()
 	directionalLight = directionalLightGO->AddComponent<Light>();
 	directionalLight->Type = LightType::Directional;
 	directionalLight->Colour = vec3(1);
-	directionalLight->GetTransform()->Rotation = { radians(-60.0), 0, 0 };
+	directionalLight->Intensity = 0.1f;
+	directionalLight->Distance = 100.0f;
+	directionalLight->GetTransform()->Rotation = { radians(-60.0f), radians(5.0f), 0};
+	directionalLight->SetCastShadows(true);
+
+	directionalLightGO = new GameObject(scene, "Spot Light");
+	directionalLight = directionalLightGO->AddComponent<Light>();
+	directionalLight->Type = LightType::Spot;
+	directionalLight->Colour = vec3(1);
+	directionalLight->GetTransform()->Rotation = { radians(-90.0f), 0, 0};
+	directionalLight->SetCastShadows(true);
+	directionalLight->Distance = 10.0f;
+	directionalLight->Radius = 60.0f;
+
+	Material defaultMaterial;
+	defaultMaterial.Albedo = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	defaultMaterial.Roughness = 0.25f;
+	GameObject* cube = new GameObject(scene, "Cube");
+	cube->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial } };
+	cube->GetTransform()->Position = { 0, -2.0f, 0 };
+	
+	defaultMaterial.Albedo = vec4(1.0, 0.0f, 0.0f, 1.0f);
+	defaultMaterial.Roughness = 0.75;
+	defaultMaterial.Metalness = 1.0f;
+	cube = new GameObject(scene, "Cube");
+	cube->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial } };
+	cube->GetTransform()->Position = { -3, -3.0f, 0 };
+
+	for (unsigned int i = 0; i < 10; i++)
+	{
+		defaultMaterial.Albedo = vec4(1.0);
+		defaultMaterial.Roughness = 0.75;
+		defaultMaterial.Metalness = 1.0f;
+		cube = new GameObject(scene, "Cube");
+		cube->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial } };
+		cube->GetTransform()->Position = { -3 * cos(i), i * 2.5f, 0 };
+	}
+
+	// Floor //
+	defaultMaterial.Albedo = vec4(1.0f);
+	defaultMaterial.Roughness = 0.8f;
+	defaultMaterial.Metalness = 0.0f;
+	GameObject* floor = new GameObject(scene, "Floor");
+	floor->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial} };
+	floor->GetTransform()->Position = { 0, -5.0f, 0 };
+	floor->GetTransform()->Scale = { 10, 1, 10 };
 
 #if CERBERUS
 	// Cerberus //
@@ -226,7 +271,7 @@ void Demo::ResetScene()
 	// Floor //
 	GameObject* floor = new GameObject(scene, "Floor");
 	floor->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), FloorMaterial } };
-	floor->GetTransform()->Position = { 0, -7.5f, 0 };
+	floor->GetTransform()->Position = { 0, -5.0f, 0 };
 	floor->GetTransform()->Scale = { 10, 1, 10 };
 
 	Material lightMaterial;
@@ -271,7 +316,7 @@ void Demo::ResetScene()
 	CreatedObjects.emplace_back(sponza);
 
 
-	const int SponzaLightCount = 4;
+	const int SponzaLightCount = 1;
 	const float SponzaLightSpawnY = -3;
 	const float MaxSponzaLightSpawnWidth = 6;
 	for (int i = 0; i < SponzaLightCount; i++)
@@ -322,6 +367,7 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyDown(GLFW_KEY_DOWN))  lightMovement.y -= LightMoveSpeed * deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_LEFT))  lightMovement.x -= LightMoveSpeed * deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_RIGHT)) lightMovement.x += LightMoveSpeed * deltaTime;
+	directionalLight->GetTransform()->Position += lightMovement;
 
 	if (Input::IsKeyDown(GLFW_KEY_MINUS)) GridAlpha -= deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_EQUAL)) GridAlpha += deltaTime;
@@ -331,7 +377,6 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_F1)) Application::EnableGizmos(false);
 	if (Input::IsKeyPressed(GLFW_KEY_F2)) Application::EnableGizmos(true);
 
-	if (Input::IsKeyPressed(GLFW_KEY_LEFT_ALT)) directionalLight->CastShadows = !directionalLight->CastShadows;
 	if (Input::IsKeyPressed(GLFW_KEY_O)) Camera::GetMainCamera()->Orthographic = !Camera::GetMainCamera()->Orthographic;
 
 #if CERBERUS
@@ -350,6 +395,7 @@ void Demo::OnUpdate(float deltaTime)
 	}
 #endif
 
+	/*
 	if (Input::IsKeyPressed(GLFW_KEY_TAB))
 	{
 		if (DeferredRenderer)
@@ -357,6 +403,7 @@ void Demo::OnUpdate(float deltaTime)
 		else
 			Renderer::SetPipeline<DeferredRenderPipeline>();
 	}
+	*/
 }
 
 void Demo::OnDraw()
@@ -378,7 +425,6 @@ void Demo::OnDraw()
 	const ImVec4 ColourGood = { 1, 1, 1, 1 };
 	const ImVec4 ColourBad = { 1, 0, 0, 1 };
 
-	auto& transforms = scene->Root().GetComponentsInChildren<Transform>();
 	auto& totalLights = scene->Root().GetComponentsInChildren<Light>();
 
 	static bool debugWindowOpen = true;
@@ -393,18 +439,19 @@ void Demo::OnDraw()
 
 		ImGui::Text("FPS: %f\n", Renderer::GetFPS());
 		ImGui::Text("Total Objects: %i", (int)CreatedObjects.size());
-		ImGui::Text("Transforms: %i", (int)transforms.size());
 		ImGui::Text("Lights: %i", (int)totalLights.size());
-		ImGui::Text("Render Type: %s", DeferredRenderer ? "Deferred" : "Forward");
+		ImGui::Text("Renderer Type: %s", DeferredRenderer ? "Deferred" : "Forward");
 		ImGui::TextColored(
 			(frameTime < (1000.0f / 30.0f)) ? ColourGood : ColourBad,
 			"Render  Frame Time: %.1fms",
 			frameTime);
+		/*
 		ImGui::TextColored(
 			(lastTimeStep <= desiredTimestep) ? ColourGood : ColourBad,
 			"Physics Frame Time: %.1fms / %.1fms",
 			lastTimeStep, desiredTimestep
 		);
+		*/
 		ImGui::Text("Resolution: (%d, %d)", Renderer::GetResolution().x, Renderer::GetResolution().y);
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
 		ImGui::Text("Samples: %d", Renderer::GetSamples());
@@ -417,6 +464,35 @@ void Demo::OnDraw()
 	}
 	ImGui::End();
 
+	ImGui::Begin("Light");
+	{
+		static const char* LightTypeNames[] = { "Point", "Spot", "Directional" };
+		if (ImGui::BeginCombo("Type", LightTypeNames[(int)directionalLight->Type]))
+		{
+			for (int i = 0; i < 3; i++)
+				if (ImGui::Selectable(LightTypeNames[i], (int)directionalLight->Type == i))
+					directionalLight->Type = (LightType)i;
+			ImGui::EndCombo();
+		}
+
+		bool castShadows = directionalLight->GetCastShadows();
+		ImGui::Checkbox("Cast Shadows", &castShadows);
+		directionalLight->SetCastShadows(castShadows);
+
+		ImGui::SliderFloat("Radius", &directionalLight->Radius, 0.1f, 120.0f, "%.1f");
+		ImGui::SliderFloat("Distance", &directionalLight->Distance, 0.1f, 120.0f, "%.1f");
+		ImGui::SliderFloat("Fade Cutoff Inner", &directionalLight->FadeCutoffInner, 0.1f, 120.0f, "%.1f");
+		ImGui::SliderFloat("Intensity", &directionalLight->Intensity, 0.01f, 25.0f, "%.1f");
+		ImGui::ColorEdit3("Colour", &directionalLight->Colour[0]);
+		ImGui::SliderFloat3("Position", &directionalLight->GetTransform()->Position[0], -100, 100, "%.2f");
+
+		vec3 rotation = degrees(directionalLight->GetTransform()->Rotation);
+		ImGui::SliderFloat3("Rotation", &rotation[0], 0.0f, 360.0f, "%.2f");
+		directionalLight->GetTransform()->Rotation = radians(rotation);
+	}
+	ImGui::End();
+
+	/*
 	static bool servicesOpen = true;
 	if (ImGui::Begin("Services", &servicesOpen))
 	{
@@ -425,6 +501,7 @@ void Demo::OnDraw()
 			ImGui::Text(" - %s", typeid(*service).name());
 	}
 	ImGui::End();
+	*/
 
 	static bool graphicsOpen = true;
 	if (ImGui::Begin("Graphics"))
@@ -441,11 +518,11 @@ void Demo::OnDraw()
 		ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
 
 		static int ShadowMapResIndex = 1; // Hardcoded default value in RenderPipeline.cpp is 1024x1024
-		static const char* ShadowMapResNames[] = { "512x512", "1024x1024", "2048x2048", "4096x4096" };
-		static glm::vec2 ShadowMapResolutions[] = { { 512, 512 }, { 1024, 1024 }, { 2048, 2048 }, { 4096, 4096 } };
+		static const char* ShadowMapResNames[] = { "512x512", "1024x1024", "2048x2048", "4096x4096", "8192x8192" };
+		static glm::vec2 ShadowMapResolutions[] = { { 512, 512 }, { 1024, 1024 }, { 2048, 2048 }, { 4096, 4096 }, { 8192, 8192 } };
 		if (ImGui::BeginCombo("Shadow Map Res", ShadowMapResNames[ShadowMapResIndex]))
 		{
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < 5; i++)
 			{
 				if (ImGui::Selectable(ShadowMapResNames[i], i == ShadowMapResIndex))
 				{
@@ -481,6 +558,9 @@ void Demo::OnDrawGizmos()
 
 	Gizmos::SetLineWidth(1.0f);
 #endif
+
+	Gizmos::SetColour(0, 1, 0);
+	Gizmos::DrawWireSphere(directionalLight->GetTransform()->Position, 0.1f);
 
 #if CERBERUS && 0
 	for (auto& Light : CerberusLights)

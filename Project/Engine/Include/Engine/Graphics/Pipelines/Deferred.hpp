@@ -16,5 +16,7 @@ namespace Engine::Graphics::Pipelines
 	public:
 		ENGINE_API DeferredRenderPipeline();
 		ENGINE_API ~DeferredRenderPipeline();
+
+		virtual ENGINE_API Framebuffer* GetMainMeshPass() override;
 	};
 }

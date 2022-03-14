@@ -21,7 +21,6 @@ namespace Engine::Graphics
 		// Depth & Stencil
 		Depth16,
 		Depth24,
-		Depth32,
 		RenderBuffer, // Creates renderbuffer object with Depth24_Stencil8 format
 
 		// Aliases
@@ -52,6 +51,11 @@ namespace Engine::Graphics
 		/// When false, generates 2D texture array.
 		/// </summary>
 		bool Is3D = false;
+
+		/// <summary>
+		/// If true creates 2D texture array or 3D texture, even if depth <= 1
+		/// </summary>
+		bool Force3D = false;
 	};
 
 	ENGINE_API unsigned int GetTextureTarget(TextureFormat format, bool multisampled = false, RenderTextureDepth depth = {});
@@ -69,6 +73,7 @@ namespace Engine::Graphics
 
 	class RenderTexture
 	{
+		bool m_Dirty;
 		unsigned int m_ID;
 		RenderTextureArgs m_Args;
 
@@ -80,6 +85,12 @@ namespace Engine::Graphics
 	public:
 		ENGINE_API RenderTexture(const RenderTextureArgs args);
 		ENGINE_API ~RenderTexture();
+
+		/// <summary>
+		/// Flag recreation of texture based on RenderTextureArgs (see RenderTexture::GetArgs())
+		/// </summary>
+		/// <returns></returns>
+		ENGINE_API void SetDirty();
 
 		ENGINE_API unsigned int GetID();
 
@@ -96,5 +107,7 @@ namespace Engine::Graphics
 
 		ENGINE_API glm::ivec2 GetResolution();
 		ENGINE_API void SetResolution(glm::ivec2 newResolution);
+
+		ENGINE_API RenderTextureArgs& GetArgs();
 	};
 }

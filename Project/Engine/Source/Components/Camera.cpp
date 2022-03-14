@@ -29,6 +29,9 @@ void Camera::FillShader(Shader* shader)
 	shader->Set("camera.Position", GetTransform()->GetGlobalPosition());
 	shader->Set("camera.ViewMatrix", GetViewMatrix());
 	shader->Set("camera.ProjectionMatrix", GetProjectionMatrix());
+
+	shader->Set("camera.FarPlane", ClipFar);
+	shader->Set("camera.NearPlane", ClipNear);
 }
 
 void Camera::Removed()

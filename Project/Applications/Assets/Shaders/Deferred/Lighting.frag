@@ -26,5 +26,7 @@ void main()
 
 	FragColour = vec4(PBRLighting(input), 1.0);
 
-	// FragColour.rgb = vec3(texture(shadowMap, vec3(TexCoords, 0)).r);
+	float depth = texture(shadowMap, vec3(TexCoords, 0)).r;
+	depth = LinearizeDepth(depth) / 10;
+	// FragColour.rgb = vec3(depth);
 }

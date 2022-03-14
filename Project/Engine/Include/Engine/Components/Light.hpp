@@ -8,24 +8,6 @@ namespace Engine::Graphics { class Shader; } // Forward declaration
 
 namespace Engine::Components
 {
-	const unsigned int LightMaxViews = 1; // Maximum cameras per light (6 = cubemap)
-
-	/// <summary>
-	/// Data calculated by the ShadowMapPass class
-	/// </summary>
-	struct LightShadowData
-	{
-		Camera Cameras[LightMaxViews];
-
-		// Camera view * projection matrices. Stored here instead of recalculating multiple times per frame
-		glm::mat4 LightSpaceMatrices[LightMaxViews];
-		
-		/// <summary>
-		/// Less than 0 implies that light has not been calculated nor put into the shadow map
-		/// </summary>
-		int ShadowMapArrayIndex[LightMaxViews];
-	};
-
 	enum class ENGINE_API LightType
 	{
 		Point = 0,
@@ -43,19 +25,31 @@ namespace Engine::Components
 		glm::vec3 Colour = { 1.0f, 1.0f, 1.0f };
 
 		/// <summary>
-		/// Point lights - effective radius		<para/> <!-- para/ effectively new line -->
-		/// Spot lights - maximum radius		<para/>
-		/// Directional lights - no effect		<para/>
+		/// Point lights		- effective radius		<para/> <!-- para/ effectively new line -->
+		/// Spot lights			- outter cutoff			<para/>
+		/// Directional lights	- no effect				<para/>
 		/// </summary>
 		float Radius = 10.0f;
 
+		/// <summary>
+		/// Point lights		- No effect							<para/>
+		/// Spot lights			- Reach, from light origin			<para/>
+		/// Directional lights	- Size of orthographic projection	<para />
+		/// </summary>
+		float Distance = 10.0f;
+
 		float Intensity = 1.0f;
 
-		bool CastShadows = true;
+		/// <summary>
+		/// Angle, in degrees
+		/// </summary>
+		float FadeCutoffInner = 12.5f;
 
-		LightShadowData ShadowData;
+		ENGINE_API bool GetCastShadows();
+		ENGINE_API void SetCastShadows(bool canCast);
+		ENGINE_API void FillShader(unsigned int lightIndex, Engine::Graphics::Shader* shader);
 
-		void FillShadowData();
-		void FillShader(unsigned int lightIndex, Engine::Graphics::Shader* shader);
+	private:
+		bool m_CastShadows = false;
 	};
 }

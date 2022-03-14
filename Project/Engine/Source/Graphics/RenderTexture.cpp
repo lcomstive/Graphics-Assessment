@@ -21,8 +21,7 @@ GLenum Engine::Graphics::GetTextureTarget(TextureFormat target, bool multisample
 	case TextureFormat::RGBA16F:
 	case TextureFormat::Depth16:
 	case TextureFormat::Depth24:
-	case TextureFormat::Depth32:
-		if (depth.Depth <= 1)
+		if (depth.Depth <= 1 && !depth.Force3D)
 			return multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 		else if (depth.Is3D)
 			return GL_TEXTURE_3D;
@@ -46,7 +45,6 @@ GLenum Engine::Graphics::TextureFormatToInternalGLFormat(TextureFormat format)
 	case TextureFormat::Cubemap:	return GL_RGB16F;
 	case TextureFormat::Depth16:	return GL_DEPTH_COMPONENT16;
 	case TextureFormat::Depth24:	return GL_DEPTH_COMPONENT24;
-	case TextureFormat::Depth32:	return GL_DEPTH_COMPONENT32;
 	}
 }
 
@@ -82,6 +80,8 @@ RenderTexture::~RenderTexture()
 	m_ID = GL_INVALID_VALUE;
 }
 
+RenderTextureArgs& RenderTexture::GetArgs() { return m_Args; }
+
 void RenderTexture::SetResolution(ivec2 resolution)
 {
 	if (m_Args.Resolution == resolution)
@@ -112,6 +112,7 @@ void RenderTexture::SetFormat(TextureFormat format)
 	Recreate();
 }
 
+void RenderTexture::SetDirty() { m_Dirty = true; }
 unsigned int RenderTexture::GetID() { return m_ID; }
 ivec2 RenderTexture::GetResolution() { return m_Args.Resolution; }
 TextureFormat RenderTexture::GetFormat() { return m_Args.Format; }
@@ -119,6 +120,7 @@ unsigned int RenderTexture::GetSamples() { return m_Args.Samples; }
 
 void RenderTexture::Recreate()
 {
+	m_Dirty = false;
 	if (m_Args.Format == TextureFormat::RenderBuffer)
 		CreateRenderbuffer();
 	else
@@ -129,11 +131,12 @@ void RenderTexture::CreateColourTexture()
 {
 	if (m_ID == GL_INVALID_VALUE)
 		glGenTextures(1, &m_ID);
+	m_Dirty = false;
 
 	GLenum textureTarget = GetTextureTarget(m_Args.Format, m_Args.Samples > 1, m_Args.Depth);
 	GLenum GLFormat = TextureFormatToGLFormat(m_Args.Format);
 	GLenum internalGLFormat = TextureFormatToInternalGLFormat(m_Args.Format);
-	Bind();
+	glBindTexture(textureTarget, m_ID);
 
 	switch (m_Args.Format)
 	{
@@ -143,10 +146,9 @@ void RenderTexture::CreateColourTexture()
 	case TextureFormat::RGBA16F:
 	case TextureFormat::Depth16:
 	case TextureFormat::Depth24:
-	case TextureFormat::Depth32:
 		if (m_Args.Samples <= 1)
 		{
-			if (m_Args.Depth.Depth <= 1) // 2D Texture
+			if (m_Args.Depth.Depth <= 1 && !m_Args.Depth.Force3D) // 2D Texture
 			{
 				glTexImage2D(
 					GL_TEXTURE_2D,			// Target
@@ -193,7 +195,7 @@ void RenderTexture::CreateColourTexture()
 		}
 		else // Multisampled
 		{
-			if (m_Args.Depth.Depth <= 1) // 2D
+			if (m_Args.Depth.Depth <= 1 && !m_Args.Depth.Force3D) // 2D
 				glTexImage2DMultisample(
 					GL_TEXTURE_2D_MULTISAMPLE,
 					m_Args.Samples,
@@ -235,7 +237,7 @@ void RenderTexture::CreateColourTexture()
 		break;
 	}
 
-	Unbind();
+	glBindTexture(textureTarget, 0);
 }
 
 void RenderTexture::CreateRenderbuffer()
@@ -267,6 +269,9 @@ void RenderTexture::CreateRenderbuffer()
 
 void RenderTexture::Bind(unsigned int textureIndex)
 {
+	if (m_Dirty)
+		Recreate();
+
 	if (m_Args.Format != TextureFormat::RenderBuffer)
 	{
 		glActiveTexture(GL_TEXTURE0 + textureIndex);

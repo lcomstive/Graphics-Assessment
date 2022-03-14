@@ -50,6 +50,8 @@ ForwardRenderPipeline::~ForwardRenderPipeline()
 	delete m_ForwardPass;
 }
 
+Framebuffer* ForwardRenderPipeline::GetMainMeshPass() { return m_ForwardPass; }
+
 void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 {
 	glEnable(GL_DEPTH_TEST);

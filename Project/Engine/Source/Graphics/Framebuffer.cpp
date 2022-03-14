@@ -84,19 +84,17 @@ void Framebuffer::Create()
 
 			GLenum attachmentType = (GLenum)(GL_COLOR_ATTACHMENT0 + (m_ColourAttachments.size() - 1));
 			if (m_Specs.Attachments[i].Format == TextureFormat::Depth16 ||
-				m_Specs.Attachments[i].Format == TextureFormat::Depth24 ||
-				m_Specs.Attachments[i].Format == TextureFormat::Depth32)
+				m_Specs.Attachments[i].Format == TextureFormat::Depth24)
 				attachmentType = GL_DEPTH_ATTACHMENT;
 
 			if (attachmentType == GL_DEPTH_ATTACHMENT && !m_DepthAttachment)
 				m_DepthAttachment = texture;
 
-			int depth3D = 0;
 			GLenum textureTarget = GetTextureTarget(m_Specs.Attachments[i].Format, m_Specs.Samples > 1, m_Specs.Attachments[i].DepthInfo);
 			switch (m_Specs.Attachments[i].Format)
 			{
 			default:
-				if (m_Specs.Attachments[i].DepthInfo.Depth <= 1)
+				if (m_Specs.Attachments[i].DepthInfo.Depth <= 1 && !m_Specs.Attachments[i].DepthInfo.Force3D)
 					glFramebufferTexture2D(
 						GL_FRAMEBUFFER,
 						attachmentType,
