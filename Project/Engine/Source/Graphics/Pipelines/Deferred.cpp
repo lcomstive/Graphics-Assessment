@@ -4,6 +4,7 @@
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/SceneService.hpp>
+#include <Engine/Graphics/Passes/Skybox.hpp>
 #include <Engine/Graphics/Passes/ShadowMap.hpp>
 #include <Engine/Graphics/Pipelines/Deferred.hpp>
 
@@ -181,4 +182,6 @@ void DeferredRenderPipeline::ForwardPass(Framebuffer* previous)
 	args.RenderOpaque = false;
 	args.DrawSorting = DrawSortType::BackToFront;
 	Renderer::Draw(args);
+
+	Renderer::GetPipeline()->GetSkybox()->Draw();
 }

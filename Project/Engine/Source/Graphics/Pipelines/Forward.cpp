@@ -3,6 +3,8 @@
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/SceneService.hpp>
+#include <Engine/Graphics/Passes/Skybox.hpp>
+#include <Engine/Graphics/RenderPipeline.hpp>
 #include <Engine/Graphics/Passes/ShadowMap.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
 
@@ -82,4 +84,6 @@ void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 	glBlendFunc(GL_ONE, GL_ZERO);
+
+	Renderer::GetPipeline()->GetSkybox()->Draw();
 }

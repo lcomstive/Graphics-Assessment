@@ -29,4 +29,6 @@ void main()
 	float depth = texture(shadowMap, vec3(TexCoords, 0)).r;
 	depth = LinearizeDepth(depth) / 10;
 	// FragColour.rgb = vec3(depth);
+
+	FragColour.rgb = input.Albedo;
 }

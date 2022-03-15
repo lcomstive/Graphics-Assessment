@@ -12,13 +12,25 @@ namespace Engine::Graphics
 		TextureFormat Format = TextureFormat::RGBA8;
 		TexturePixelType PixelType = TexturePixelType::UnsignedByte;
 		RenderTextureDepth DepthInfo = {};
+		GLenum Wrap = GL_REPEAT;
+		GLenum MinFilter = GL_LINEAR;
+		GLenum MagFilter = GL_LINEAR;
 
 		FramebufferAttachment() {}
 		FramebufferAttachment(
 			TextureFormat format,
 			TexturePixelType pixelType = TexturePixelType::UnsignedByte,
-			RenderTextureDepth depthInfo = {})
-			: Format(format), PixelType(pixelType), DepthInfo(depthInfo) { }
+			RenderTextureDepth depthInfo = {},
+			GLenum wrap = GL_REPEAT,
+			GLenum minFilter = GL_LINEAR,
+			GLenum magFilter = GL_LINEAR) :
+			Format(format),
+			PixelType(pixelType),
+			DepthInfo(depthInfo),
+			Wrap(wrap),
+			MinFilter(minFilter),
+			MagFilter(magFilter)
+		{ }
 	};
 
 	struct ENGINE_API FramebufferSpec

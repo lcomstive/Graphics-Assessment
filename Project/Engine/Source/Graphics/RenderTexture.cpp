@@ -162,11 +162,11 @@ void RenderTexture::CreateColourTexture()
 					nullptr					// Data/Pixels
 				);
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m_Args.MinFilter);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m_Args.MagFilter);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, m_Args.Wrap);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, m_Args.Wrap);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, m_Args.Wrap);
 			}
 			else // 3D Texture or 2D Texture Array
 			{
@@ -184,13 +184,13 @@ void RenderTexture::CreateColourTexture()
 					nullptr					// Data/Pixels
 				);
 
-				glTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, m_Args.MinFilter);
+				glTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, m_Args.MagFilter);
 				glTexParameteri(textureTarget, GL_TEXTURE_BASE_LEVEL, 0);
 				glTexParameteri(textureTarget, GL_TEXTURE_MAX_LEVEL, 0);
-				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_R, m_Args.Wrap);
+				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, m_Args.Wrap);
+				glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, m_Args.Wrap);
 			}
 		}
 		else // Multisampled
@@ -229,11 +229,11 @@ void RenderTexture::CreateColourTexture()
 				GL_FLOAT,
 				nullptr);
 
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, m_Args.Wrap);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, m_Args.Wrap);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, m_Args.Wrap);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, m_Args.MinFilter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, m_Args.MagFilter);
 		break;
 	}
 

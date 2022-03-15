@@ -11,6 +11,7 @@ namespace Engine::Graphics
 {
 	// Forward declarations
 	class Shader;
+	class Skybox;
 	class Framebuffer;
 	class ShadowMapPass;
 
@@ -24,6 +25,7 @@ namespace Engine::Graphics
 
 	class ENGINE_API RenderPipeline
 	{
+		Skybox* m_Skybox = nullptr;
 		ShadowMapPass* m_ShadowPass = nullptr;
 
 	protected:
@@ -51,7 +53,9 @@ namespace Engine::Graphics
 
 		Shader* CurrentShader();
 		Framebuffer* GetPreviousPass();
-		ShadowMapPass* GetShadowMapPass();
 		virtual Framebuffer* GetMainMeshPass() { return GetPassAt(0); }
+
+		Skybox* GetSkybox();
+		ShadowMapPass* GetShadowMapPass();
 	};
 }

@@ -9,8 +9,8 @@ using namespace std;
 using namespace Engine;
 using namespace Engine::Graphics;
 
-Texture::Texture() : m_Path(""), m_ID(GL_INVALID_VALUE), m_HDR(false) { }
-Texture::Texture(string path, bool hdr) : m_Path(path), m_ID(GL_INVALID_VALUE), m_HDR(hdr) { }
+Texture::Texture() : m_Path(""), m_ID(GL_INVALID_VALUE), m_Args() { }
+Texture::Texture(string path, TextureArgs args) : m_Path(path), m_ID(GL_INVALID_VALUE), m_Args(args) { }
 
 Texture::~Texture()
 {
@@ -30,8 +30,9 @@ void Texture::GenerateImage()
 	int width, height, channelCount;
 	void* data = nullptr;
 	
+	stbi_set_flip_vertically_on_load(m_Args.FlipVertically);
 	// Load image data from file
-	if(!m_HDR)
+	if(!m_Args.HDR)
 		data = stbi_load(m_Path.c_str(), &width, &height, &channelCount, 0);
 	else
 		data = stbi_loadf(m_Path.c_str(), &width, &height, &channelCount, 0);
@@ -53,10 +54,10 @@ void Texture::GenerateImage()
 
 	// Set texture parameters
 	// TODO: Make these variables that can be changed outside of this function
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, m_Args.Wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, m_Args.Wrap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m_Args.MinFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m_Args.MagFilter);
 
 	// Get texture format based on channels
 	GLenum internalFormat = GL_INVALID_ENUM, textureFormat = GL_INVALID_ENUM;
@@ -64,20 +65,20 @@ void Texture::GenerateImage()
 	{
 	case 1:
 		textureFormat = GL_RED;
-		internalFormat = m_HDR ? GL_R16F : GL_RED;
+		internalFormat = m_Args.HDR ? GL_R16F : GL_RED;
 		break;
 	case 3:
 		textureFormat = GL_RGB;
-		internalFormat = m_HDR ? GL_RGB16F : GL_RGB;
+		internalFormat = m_Args.HDR ? GL_RGB16F : GL_RGB;
 		break;
 	case 4:
 		textureFormat = GL_RGBA;
-		internalFormat = m_HDR ? GL_RGBA16F : GL_RGBA;
+		internalFormat = m_Args.HDR ? GL_RGBA16F : GL_RGBA;
 		break;
 	}
 
 	// Fill OpenGL texture data with binary data
-	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, textureFormat, m_HDR ? GL_FLOAT : GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, textureFormat, m_Args.HDR ? GL_FLOAT : GL_UNSIGNED_BYTE, data);
 
 	// Release resources, these are now stored inside OpenGL's texture buffer
 	stbi_image_free(data);

@@ -69,6 +69,9 @@ namespace Engine::Graphics
 		TextureFormat Format = TextureFormat::RGBA8;
 		TexturePixelType PixelType = TexturePixelType::UnsignedByte;
 		RenderTextureDepth Depth;
+		GLenum Wrap = GL_REPEAT;
+		GLenum MinFilter = GL_LINEAR;
+		GLenum MagFilter = GL_LINEAR;
 	};
 
 	class RenderTexture

@@ -153,7 +153,9 @@ void Shader::WatchShader(string path, bool watch)
 void Shader::UpdateStages(ShaderStageInfo stageInfo)
 {
 	// Check for same stages, in that case won't need to recreate shader program
-	if (stageInfo.VertexPath.compare(m_ShaderStages.VertexPath) == 0 &&
+	if (!m_IsDirty &&
+		m_Program != GL_INVALID_VALUE &&
+		stageInfo.VertexPath.compare(m_ShaderStages.VertexPath) == 0 &&
 		stageInfo.FragmentPath.compare(m_ShaderStages.FragmentPath) == 0 &&
 		stageInfo.GeometryPath.compare(m_ShaderStages.GeometryPath) == 0 &&
 		stageInfo.ComputePath.compare(m_ShaderStages.ComputePath) == 0 &&

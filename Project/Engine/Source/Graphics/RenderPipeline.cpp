@@ -7,6 +7,7 @@
 #include <Engine/Components/Camera.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/SceneService.hpp>
+#include <Engine/Graphics/Passes/Skybox.hpp>
 #include <Engine/Graphics/RenderPipeline.hpp>
 #include <Engine/Graphics/Passes/ShadowMap.hpp>
 
@@ -21,6 +22,7 @@ const ivec2 ShadowMapResolution = { 1024, 1024 };
 
 RenderPipeline::RenderPipeline()
 {
+	m_Skybox = new Skybox();
 	m_ShadowPass = new ShadowMapPass(ShadowMapResolution);
 
 	AddPass(m_ShadowPass->GetPipelinePass());
@@ -127,3 +129,4 @@ void RenderPipeline::OnResized(ivec2 resolution)
 Shader* RenderPipeline::CurrentShader() { return m_CurrentShader; }
 Framebuffer* RenderPipeline::GetPreviousPass() { return m_PreviousPass; }
 ShadowMapPass* RenderPipeline::GetShadowMapPass() { return m_ShadowPass; }
+Skybox* RenderPipeline::GetSkybox() { return m_Skybox; }

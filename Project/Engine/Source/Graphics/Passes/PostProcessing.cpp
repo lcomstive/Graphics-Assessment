@@ -38,6 +38,9 @@ FullscreenEffectPass::~FullscreenEffectPass()
 
 void FullscreenEffectPass::DrawCallback(Framebuffer* previous)
 {
+	if (previous->ColourAttachmentCount() == 0)
+		return;
+
 	previous->GetColourAttachment()->Bind();
 	if(m_Shader)
 		m_Shader->Set("inputTexture", 0);

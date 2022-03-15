@@ -7,6 +7,7 @@
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Services/SceneService.hpp>
+#include <Engine/Graphics/Passes/Skybox.hpp>
 #include <Engine/Services/ExternalService.hpp>
 #include <Engine/Graphics/Passes/ShadowMap.hpp>
 #include <Engine/Graphics/Pipelines/Forward.hpp>
@@ -43,6 +44,7 @@ bool DeferredRenderer = false;
 // Main Model
 #define CERBERUS	0
 #define SPONZA		0
+#define IBL_TEST	1
 
 #if CERBERUS
 ResourceID CerberusModel;
@@ -70,6 +72,18 @@ vector<LightData> CerberusLights;
 ResourceID SponzaModel;
 vector<Light*> SponzaLights;
 const string SponzaModelPath = "Models/Sponza/sponza.glb";
+#endif
+
+#if IBL_TEST
+const vector<string> EnvironmentMaps =
+{
+	"Textures/Environment Maps/Ice Lake.jpg",
+	"Textures/Environment Maps/Lobby.jpg",
+	"Textures/Environment Maps/Paper Mill.jpg",
+	"Textures/Environment Maps/Road to Monument Valley.jpg",
+};
+
+EnvironmentMap* EnvMap;
 #endif
 
 // Floor Texture
@@ -135,6 +149,11 @@ void Demo::OnStart()
 	SponzaModel = ResourceManager::Load<Model>(appDir + SponzaModelPath);
 #endif
 
+#if IBL_TEST
+	EnvMap = new EnvironmentMap(Application::AssetDir + EnvironmentMaps[1]);
+	Renderer::GetPipeline()->GetSkybox()->EnvironmentMap = EnvMap;
+#endif
+
 	// Floor
 	FloorMaterial.AlbedoMap = ResourceManager::LoadNamed<Texture>("FloorAlbedo", appDir + FloorTexturePath);
 	FloorMaterial.NormalMap = ResourceManager::LoadNamed<Texture>("FloorNormal", appDir + FloorNormalMapPath);
@@ -197,6 +216,7 @@ void Demo::ResetScene()
 	CreatedObjects.emplace_back(cameraObj);
 
 	GameObject* directionalLightGO = new GameObject(scene, "Directional Light");
+	/*
 	directionalLight = directionalLightGO->AddComponent<Light>();
 	directionalLight->Type = LightType::Directional;
 	directionalLight->Colour = vec3(1);
@@ -204,7 +224,9 @@ void Demo::ResetScene()
 	directionalLight->Distance = 100.0f;
 	directionalLight->GetTransform()->Rotation = { radians(-60.0f), radians(5.0f), 0};
 	directionalLight->SetCastShadows(true);
+	*/
 
+	/*
 	directionalLightGO = new GameObject(scene, "Spot Light");
 	directionalLight = directionalLightGO->AddComponent<Light>();
 	directionalLight->Type = LightType::Spot;
@@ -213,39 +235,17 @@ void Demo::ResetScene()
 	directionalLight->SetCastShadows(true);
 	directionalLight->Distance = 10.0f;
 	directionalLight->Radius = 60.0f;
+	*/
 
-	Material defaultMaterial;
-	defaultMaterial.Albedo = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	defaultMaterial.Roughness = 0.25f;
-	GameObject* cube = new GameObject(scene, "Cube");
-	cube->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial } };
-	cube->GetTransform()->Position = { 0, -2.0f, 0 };
-	
-	defaultMaterial.Albedo = vec4(1.0, 0.0f, 0.0f, 1.0f);
-	defaultMaterial.Roughness = 0.75;
-	defaultMaterial.Metalness = 1.0f;
-	cube = new GameObject(scene, "Cube");
-	cube->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial } };
-	cube->GetTransform()->Position = { -3, -3.0f, 0 };
-
-	for (unsigned int i = 0; i < 10; i++)
-	{
-		defaultMaterial.Albedo = vec4(1.0);
-		defaultMaterial.Roughness = 0.75;
-		defaultMaterial.Metalness = 1.0f;
-		cube = new GameObject(scene, "Cube");
-		cube->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial } };
-		cube->GetTransform()->Position = { -3 * cos(i), i * 2.5f, 0 };
-	}
-
-	// Floor //
-	defaultMaterial.Albedo = vec4(1.0f);
-	defaultMaterial.Roughness = 0.8f;
-	defaultMaterial.Metalness = 0.0f;
-	GameObject* floor = new GameObject(scene, "Floor");
-	floor->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), defaultMaterial} };
-	floor->GetTransform()->Position = { 0, -5.0f, 0 };
-	floor->GetTransform()->Scale = { 10, 1, 10 };
+#if IBL_TEST
+	Material sphereMaterial;
+	sphereMaterial.Roughness = 0;
+	sphereMaterial.Metalness = 1;
+	sphereMaterial.AlbedoMap = EnvMap->GetTexture();
+	GameObject* sphere = new GameObject(scene, "Sphere");
+	sphere->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Sphere(), sphereMaterial } };
+	sphere->GetTransform()->Position = { 0, 0, 0 };
+#endif
 
 #if CERBERUS
 	// Cerberus //
@@ -316,7 +316,7 @@ void Demo::ResetScene()
 	CreatedObjects.emplace_back(sponza);
 
 
-	const int SponzaLightCount = 1;
+	const int SponzaLightCount = 4;
 	const float SponzaLightSpawnY = -3;
 	const float MaxSponzaLightSpawnWidth = 6;
 	for (int i = 0; i < SponzaLightCount; i++)
@@ -367,7 +367,9 @@ void Demo::OnUpdate(float deltaTime)
 	if (Input::IsKeyDown(GLFW_KEY_DOWN))  lightMovement.y -= LightMoveSpeed * deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_LEFT))  lightMovement.x -= LightMoveSpeed * deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_RIGHT)) lightMovement.x += LightMoveSpeed * deltaTime;
-	directionalLight->GetTransform()->Position += lightMovement;
+
+	if(directionalLight)
+		directionalLight->GetTransform()->Position += lightMovement;
 
 	if (Input::IsKeyDown(GLFW_KEY_MINUS)) GridAlpha -= deltaTime;
 	if (Input::IsKeyDown(GLFW_KEY_EQUAL)) GridAlpha += deltaTime;
@@ -464,6 +466,7 @@ void Demo::OnDraw()
 	}
 	ImGui::End();
 
+	/*
 	ImGui::Begin("Light");
 	{
 		static const char* LightTypeNames[] = { "Point", "Spot", "Directional" };
@@ -491,6 +494,7 @@ void Demo::OnDraw()
 		directionalLight->GetTransform()->Rotation = radians(rotation);
 	}
 	ImGui::End();
+	*/
 
 	/*
 	static bool servicesOpen = true;

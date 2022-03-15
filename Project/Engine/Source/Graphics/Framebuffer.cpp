@@ -56,12 +56,16 @@ void Framebuffer::Create()
 	{
 		if (m_Specs.Attachments[i].Format == TextureFormat::RenderBuffer)
 		{
-			RenderTexture* texture = new RenderTexture(
+			RenderTexture* texture = new RenderTexture(RenderTextureArgs
 				{
 					m_Specs.Samples,
 					m_Specs.Resolution,
 					m_Specs.Attachments[i].Format,
-					m_Specs.Attachments[i].PixelType
+					m_Specs.Attachments[i].PixelType,
+					RenderTextureDepth(),
+					m_Specs.Attachments[i].Wrap,
+					m_Specs.Attachments[i].MinFilter,
+					m_Specs.Attachments[i].MagFilter
 				}
 			);
 			m_DepthAttachment = texture;
@@ -75,7 +79,10 @@ void Framebuffer::Create()
 					m_Specs.Resolution,
 					m_Specs.Attachments[i].Format,
 					m_Specs.Attachments[i].PixelType,
-					m_Specs.Attachments[i].DepthInfo
+					m_Specs.Attachments[i].DepthInfo,
+					m_Specs.Attachments[i].Wrap,
+					m_Specs.Attachments[i].MinFilter,
+					m_Specs.Attachments[i].MagFilter
 				}
 			);
 			texture->Bind();
