@@ -5,12 +5,11 @@
 const int MaxLights 	= 32;
 const int MaxLightViews = 1;
 
-uniform sampler2DArray shadowMap;
-
 #define LIGHT_POINT 		0
 #define LIGHT_SPOT 			1
 #define LIGHT_DIRECTIONAL 	2
 
+// LIGHTS //
 struct Light
 {
 	int Type;
@@ -31,8 +30,25 @@ struct Light
 
 uniform int lightCount = 0;
 uniform Light lights[MaxLights];
-uniform vec3 ambientLighting = vec3(0.1, 0.1, 0.1);
 
+// SHADOWS //
+uniform sampler2DArray shadowMap;
+
+// ENVIRONMENT MAP //
+struct Environment
+{
+	sampler2D BRDFMap;
+	samplerCube IrradianceMap;
+	samplerCube EnvironmentMap;
+	samplerCube ReflectionMap;
+	samplerCube PrefilterMap;
+
+	float AmbientLightStrength;
+};
+
+uniform Environment environment;
+
+// FUNCTIONS //
 float LinearizeDepth(float depth)
 {
 	float z = depth * 2.0 - 1.0; // NDC
@@ -91,7 +107,7 @@ float GetShadowAmount(int lightIndex, vec3 surfaceNormal, vec3 fragPos)
 
 vec3 BlinnPhong(vec3 albedo, vec3 fragPosition, vec3 normals)
 {
-	vec3 lighting = albedo * ambientLighting;
+	vec3 lighting = albedo * vec3(0.1) * environment.AmbientLightStrength;
 	vec3 viewDir = normalize(camera.Position - fragPosition);
 	for(int i = 0; i < min(lightCount, MaxLights); i++)
 	{

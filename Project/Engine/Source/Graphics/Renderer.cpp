@@ -18,7 +18,7 @@ Renderer* Renderer::s_Instance = nullptr;
 Renderer::Renderer() :
 	m_FPS(0),
 	m_Time(0),
-	m_Samples(1),
+	m_MaxSamples(1),
 	m_DrawQueue(),
 	m_DeltaTime(0),
 	m_VSync(false),
@@ -47,6 +47,9 @@ Renderer::Renderer() :
 			glPatchParameteri(GL_PATCH_VERTICES, 3);
 		}
 	}
+
+	// Get maximum sample count for multisampling
+	glGetIntegerv(GL_MAX_SAMPLES, &m_MaxSamples);
 }
 
 Renderer::~Renderer()
@@ -62,8 +65,8 @@ void Renderer::SetWireframe(bool wireframe) { glPolygonMode(GL_FRONT_AND_BACK, (
 float Renderer::GetFPS() { return s_Instance->m_FPS; }
 float Renderer::GetTime() { return s_Instance->m_Time; }
 bool Renderer::GetVSync() { return s_Instance->m_VSync; }
-uint32_t Renderer::GetSamples() { return s_Instance->m_Samples; }
 float Renderer::GetDeltaTime() { return s_Instance->m_DeltaTime; }
+int Renderer::GetMaxSamples() { return s_Instance->m_MaxSamples; }
 ivec2 Renderer::GetResolution() { return s_Instance->m_Resolution; }
 bool Renderer::GetWireframeMode() { return s_Instance->m_Wireframe; }
 Camera* Renderer::GetMainCamera() { return s_Instance->m_MainCamera; }
@@ -126,6 +129,13 @@ void Renderer::Draw(DrawArgs args)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		mesh->Draw();
+
+		for (int i = 0; i < 5; i++)
+		{
+			// Unbind material textures
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 
 		if(drawCall.Material.Wireframe && !s_Instance->m_Wireframe)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

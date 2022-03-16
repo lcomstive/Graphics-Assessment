@@ -60,7 +60,7 @@ vector<unsigned char> Engine::Read(string path)
 	return contents;
 }
 
-void Engine::WriteText(string path, string contents)
+void Engine::WriteText(string path, string& contents)
 {
 	ofstream filestream(path, ios::out | ios::binary);
 	filestream.write(contents.c_str(), contents.size());
@@ -68,7 +68,7 @@ void Engine::WriteText(string path, string contents)
 	filestream.close();
 }
 
-void Engine::Write(string path, vector<unsigned char> data)
+void Engine::Write(string path, vector<unsigned char>& data)
 {
 	ofstream filestream(path, ios::out | ios::binary);
 	filestream.write((const char*)data.data(), data.size());

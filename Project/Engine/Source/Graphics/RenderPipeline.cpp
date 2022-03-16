@@ -50,9 +50,10 @@ void RenderPipeline::Draw(Camera& camera)
 		{
 			m_CurrentShader->Bind();
 
-			m_CurrentShader->Set("resolution", vec2{ Renderer::GetResolution().x, Renderer::GetResolution().y });
 			m_CurrentShader->Set("time", Renderer::GetTime());
 			m_CurrentShader->Set("deltaTime", Renderer::GetDeltaTime());
+			m_CurrentShader->Set("samples", (int)info.Pass->GetSamples());
+			m_CurrentShader->Set("resolution", vec2{ Renderer::GetResolution().x, Renderer::GetResolution().y });
 
 			camera.FillShader(m_CurrentShader);
 		}

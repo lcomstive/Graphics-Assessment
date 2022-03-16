@@ -37,4 +37,11 @@
 .vs/
 
 # Locked files, when hot-reloading engine modules enabled
-Project/Applications/Assets/*.locked
+Project/Applications/Assets/**/*.locked
+
+# Generated environment cubemap, irradiance & prefiltered maps
+*.Cubemap.hdr
+*.Irradiance.hdr
+
+# Cached assets (e.g. models)
+*.cache

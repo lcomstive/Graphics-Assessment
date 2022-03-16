@@ -47,7 +47,7 @@ DeferredRenderPipeline::DeferredRenderPipeline()
 	
 	m_MeshShader = ResourceManager::LoadNamed<Shader>("Shaders/Deferred/Mesh", meshShaderStages);
 
-	RenderPipelinePass pass = { m_MeshShader, m_MeshPass };
+	RenderPipelinePass pass = { "Deferred -> Mesh", m_MeshShader, m_MeshPass};
 	pass.DrawCallback = std::bind(&DeferredRenderPipeline::MeshPass, this, ::placeholders::_1);
 	AddPass(pass);
 
@@ -58,6 +58,7 @@ DeferredRenderPipeline::DeferredRenderPipeline()
 		TextureFormat::Depth
 	};
 	m_LightingPass = new Framebuffer(framebufferSpecs);
+	pass.Name = "Deferred -> Lighting";
 	pass.Pass = m_LightingPass;
 	pass.DrawCallback = bind(&DeferredRenderPipeline::LightingPass, this, ::placeholders::_1);
 
@@ -86,6 +87,7 @@ DeferredRenderPipeline::DeferredRenderPipeline()
 			Application::AssetDir + "Shaders/Forward/Mesh.frag",
 		});
 	pass.Shader = m_ForwardShader;
+	pass.Name = "Deferred -> Forward";
 	AddPass(pass);
 }
 
@@ -115,23 +117,31 @@ void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	Shader* shader = CurrentShader();
 	// FILL G-BUFFER MAPS //
 	// Position
 	m_MeshPass->GetColourAttachment()->Bind();
-	shader->Set("inputPositionRoughness", 0);
+	m_CurrentShader->Set("inputPositionRoughness", 0);
+	m_CurrentShader->Set("inputPositionRoughnessMS", 0);
 
 	// Normals
 	m_MeshPass->GetColourAttachment(1)->Bind(1);
-	shader->Set("inputNormalMetalness", 1);
+	m_CurrentShader->Set("inputNormalMetalness", 1);
+	m_CurrentShader->Set("inputNormalMetalnessMS", 1);
 
 	// Albedo
 	m_MeshPass->GetColourAttachment(2)->Bind(2);
-	shader->Set("inputAlbedo", 2);
+	m_CurrentShader->Set("inputAlbedo", 2);
+	m_CurrentShader->Set("inputAlbedoMS", 2);
 
 	// Depth
 	m_MeshPass->GetDepthAttachment()->Bind(3);
-	shader->Set("inputDepth", 3);
+	m_CurrentShader->Set("inputDepth", 3);
+	m_CurrentShader->Set("inputDepthMS", 3);
+
+	// Environment Map
+	Skybox* skybox = Renderer::GetPipeline()->GetSkybox();
+	if (skybox)
+		skybox->FillShaderData(m_CurrentShader);
 
 	// FILL LIGHT DATA //
 	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
@@ -156,7 +166,13 @@ void DeferredRenderPipeline::LightingPass(Framebuffer* previous)
 	{
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 	}
+
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+	glActiveTexture(GL_TEXTURE0);
 }
 
 void DeferredRenderPipeline::ForwardPass(Framebuffer* previous)
@@ -171,6 +187,12 @@ void DeferredRenderPipeline::ForwardPass(Framebuffer* previous)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	// Environment Map
+	Skybox* skybox = Renderer::GetPipeline()->GetSkybox();
+	if (skybox)
+		skybox->FillShaderData(m_CurrentShader);
+
+	// Shadow Map
 	ShadowMapPass* shadowMap = Renderer::GetPipeline()->GetShadowMapPass();
 	if (shadowMap && shadowMap->GetPipelinePass().Pass)
 	{

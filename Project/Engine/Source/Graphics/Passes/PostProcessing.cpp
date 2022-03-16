@@ -14,6 +14,8 @@ const string FullscreenVertexShader = "Shaders/TextureQuad.vert";
 #pragma region Fullscreen Effect Pass
 FullscreenEffectPass::FullscreenEffectPass(std::string fragmentShaderPath)
 {
+	m_Pass.Name = "Fullscreen Effect";
+
 	FramebufferSpec specs;
 	specs.Resolution = Renderer::GetResolution();
 	specs.Attachments = { { TextureFormat::RGBA16F, TexturePixelType::Float } };
@@ -42,8 +44,12 @@ void FullscreenEffectPass::DrawCallback(Framebuffer* previous)
 		return;
 
 	previous->GetColourAttachment()->Bind();
-	if(m_Shader)
+	if (m_Shader)
+	{
 		m_Shader->Set("inputTexture", 0);
+		m_Shader->Set("inputTextureMS", 0);
+		m_Shader->Set("samples", (int)previous->GetSamples());
+	}
 	OnDraw(m_Shader);
 
 	// DRAW FULLSCREEN QUAD //
@@ -55,7 +61,10 @@ RenderPipelinePass& FullscreenEffectPass::GetPipelinePass() { return m_Pass; }
 
 #pragma region Tonemapping Pass
 const string TonemappingShader = "Shaders/PostProcessing/Tonemapping.frag";
-TonemappingPass::TonemappingPass() : FullscreenEffectPass(TonemappingShader) { }
+TonemappingPass::TonemappingPass() : FullscreenEffectPass(TonemappingShader)
+{
+	GetPipelinePass().Name = "Tonemapper";
+}
 
 void TonemappingPass::OnDraw(Shader* shader)
 {

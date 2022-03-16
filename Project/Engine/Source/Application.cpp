@@ -71,7 +71,6 @@ void Application::Run()
 
 	// Create Renderer instance
 	Renderer::s_Instance = (m_Renderer = new Renderer());
-	m_Renderer->m_Samples = m_Args.Samples;
 	m_Renderer->m_Resolution = m_Args.Resolution;
 
 	// Create Gizmos instance
@@ -283,8 +282,10 @@ void Application::CreateAppWindow()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGui::StyleColorsDark();
 	StyleImGUI();
-
 #pragma endregion
+
+	// Enable seamless transitions at cubemap joins
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	
 	Log::Debug("Engine initialised");
 }

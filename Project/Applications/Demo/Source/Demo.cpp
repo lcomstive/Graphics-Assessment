@@ -42,14 +42,14 @@ vector<GameObject*> CreatedObjects;
 bool DeferredRenderer = false;
 
 // Main Model
-#define CERBERUS	0
+#define CERBERUS	1
 #define SPONZA		0
-#define IBL_TEST	1
+#define IBL_TEST	0
 
 #if CERBERUS
 ResourceID CerberusModel;
-const string CerberusModelPath = "Models/Cerberus/Cerberus_LP.fbx";
-const string CerberusNormalMapPath = "Models/Cerberus/Textures/Cerberus_N.tga";
+const string CerberusModelPath		  = "Models/Cerberus/Cerberus_LP.fbx";
+const string CerberusNormalMapPath	  = "Models/Cerberus/Textures/Cerberus_N.tga";
 const string CerberusMetalnessMapPath = "Models/Cerberus/Textures/Cerberus_M.tga";
 const string CerberusRoughnessMapPath = "Models/Cerberus/Textures/Cerberus_R.tga";
 ResourceID CerberusNormalMap, CerberusMetalnessMap, CerberusRoughnessMap;
@@ -74,24 +74,27 @@ vector<Light*> SponzaLights;
 const string SponzaModelPath = "Models/Sponza/sponza.glb";
 #endif
 
-#if IBL_TEST
-const vector<string> EnvironmentMaps =
-{
-	"Textures/Environment Maps/Ice Lake.jpg",
-	"Textures/Environment Maps/Lobby.jpg",
-	"Textures/Environment Maps/Paper Mill.jpg",
-	"Textures/Environment Maps/Road to Monument Valley.jpg",
-};
+#define ENVIRONMENT_MAP(dirName) { "Textures/Environment Maps/" dirName "/Environment.jpg", "Textures/Environment Maps/" dirName "/Reflection.hdr" }
 
-EnvironmentMap* EnvMap;
-#endif
+const ivec2 EnvironmentMapRes = { 2048, 2048 };
+vector<EnvironmentMapArgs> EnvironmentMaps =
+{
+	ENVIRONMENT_MAP("Ice Lake"),
+	ENVIRONMENT_MAP("Lobby"),
+	ENVIRONMENT_MAP("Paper Mill"),
+	ENVIRONMENT_MAP("Monument Valley")
+};
+unsigned int EnvironmentMapIndex = -1;
+std::vector<EnvironmentMap*> EnvMapData;
+
+void SetEnvironmentMap(unsigned int index);
 
 // Floor Texture
 const string FloorTexturePath = "Textures/Rusted Iron/rustediron2_basecolor.png";
 const string FloorNormalMapPath = "Textures/Rusted Iron/rustediron2_normal.png";
 const string FloorRoughnessMapPath = "Textures/Rusted Iron/rustediron2_roughness.png";
 const string FloorMetalnessMapPath = "Textures/Rusted Iron/rustediron2_metallic.png";
-Material FloorMaterial;
+Material* FloorMaterial;
 
 // Post Processing
 TonemappingPass* PP_Tonemapping;
@@ -149,16 +152,8 @@ void Demo::OnStart()
 	SponzaModel = ResourceManager::Load<Model>(appDir + SponzaModelPath);
 #endif
 
-#if IBL_TEST
-	EnvMap = new EnvironmentMap(Application::AssetDir + EnvironmentMaps[1]);
-	Renderer::GetPipeline()->GetSkybox()->EnvironmentMap = EnvMap;
-#endif
-
-	// Floor
-	FloorMaterial.AlbedoMap = ResourceManager::LoadNamed<Texture>("FloorAlbedo", appDir + FloorTexturePath);
-	FloorMaterial.NormalMap = ResourceManager::LoadNamed<Texture>("FloorNormal", appDir + FloorNormalMapPath);
-	FloorMaterial.RoughnessMap = ResourceManager::LoadNamed<Texture>("FloorRoughness", appDir + FloorRoughnessMapPath);
-	FloorMaterial.MetalnessMap = ResourceManager::LoadNamed<Texture>("FloorMetalness", appDir + FloorMetalnessMapPath);
+	EnvMapData.resize(EnvironmentMaps.size());
+	SetEnvironmentMap(1);
 
 	// Create scene
 	ResetScene();
@@ -177,6 +172,15 @@ void Demo::OnShutdown()
 #if DRAW_GRID
 	ResourceManager::Unload(GridMeshID);
 #endif
+
+	Skybox* skybox = Renderer::GetPipeline()->GetSkybox();
+	for (unsigned int i = 0; i < (unsigned int)EnvMapData.size(); i++)
+	{
+		if (skybox->EnvironmentMap == EnvMapData[i])
+			skybox->EnvironmentMap = nullptr;
+		if (EnvMapData[i])
+			delete EnvMapData[i];
+	}
 
 	Application::GetService<ExternalServices>()->Remove(Application::AssetDir + ExternalServicePath);
 
@@ -239,12 +243,20 @@ void Demo::ResetScene()
 
 #if IBL_TEST
 	Material sphereMaterial;
-	sphereMaterial.Roughness = 0;
-	sphereMaterial.Metalness = 1;
-	sphereMaterial.AlbedoMap = EnvMap->GetTexture();
-	GameObject* sphere = new GameObject(scene, "Sphere");
-	sphere->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Sphere(), sphereMaterial } };
-	sphere->GetTransform()->Position = { 0, 0, 0 };
+	sphereMaterial.Albedo = vec4(1, 0, 0, 1);
+
+	const unsigned int SphereRows = 10;
+	for (unsigned int x = 0; x < SphereRows; x++)
+	{
+		sphereMaterial.Metalness = std::clamp((float)x / (float)SphereRows, 0.05f, 1.0f);
+		for (unsigned int y = 0; y < SphereRows; y++)
+		{
+			sphereMaterial.Roughness = std::clamp((float)y / (float)SphereRows, 0.05f, 1.0f);
+			GameObject* sphere = new GameObject(scene, "Sphere");
+			sphere->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Sphere(), sphereMaterial } };
+			sphere->GetTransform()->Position = { x * 3, y * 3, 0 };
+		}
+	}
 #endif
 
 #if CERBERUS
@@ -270,9 +282,28 @@ void Demo::ResetScene()
 
 	// Floor //
 	GameObject* floor = new GameObject(scene, "Floor");
-	floor->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube(), FloorMaterial } };
+	floor->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube() } };
 	floor->GetTransform()->Position = { 0, -5.0f, 0 };
 	floor->GetTransform()->Scale = { 10, 1, 10 };
+
+	FloorMaterial = &floor->GetComponent<MeshRenderer>()->Meshes[0].Material;
+
+	/*
+	FloorMaterial->AlbedoMap = ResourceManager::LoadNamed<Texture>("FloorAlbedo", appDir + FloorTexturePath);
+	FloorMaterial->NormalMap = ResourceManager::LoadNamed<Texture>("FloorNormal", appDir + FloorNormalMapPath);
+	FloorMaterial->RoughnessMap = ResourceManager::LoadNamed<Texture>("FloorRoughness", appDir + FloorRoughnessMapPath);
+	FloorMaterial->MetalnessMap = ResourceManager::LoadNamed<Texture>("FloorMetalness", appDir + FloorMetalnessMapPath);
+	*/
+
+	FloorMaterial->Roughness = 0.5f;
+	FloorMaterial->Metalness = 0.5f;
+
+
+	// Directional Light
+	GameObject* light = new GameObject(scene, "Directional Light");
+	directionalLight = light->AddComponent<Light>();
+	directionalLight->Type = LightType::Directional;
+	light->GetTransform()->Rotation = { radians(-60.0f), 0, 0 };
 
 	Material lightMaterial;
 
@@ -437,8 +468,6 @@ void Demo::OnDraw()
 		float lastTimeStep = physicsSystem.LastTimestep().count();
 		float desiredTimestep = physicsSystem.Timestep().count();
 
-		ImGui::Text("GRID ALPHA: %.2f", GridAlpha);
-
 		ImGui::Text("FPS: %f\n", Renderer::GetFPS());
 		ImGui::Text("Total Objects: %i", (int)CreatedObjects.size());
 		ImGui::Text("Lights: %i", (int)totalLights.size());
@@ -456,7 +485,6 @@ void Demo::OnDraw()
 		*/
 		ImGui::Text("Resolution: (%d, %d)", Renderer::GetResolution().x, Renderer::GetResolution().y);
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
-		ImGui::Text("Samples: %d", Renderer::GetSamples());
 
 		if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
 			ImGui::Text("PHYSICS PAUSED");
@@ -467,45 +495,43 @@ void Demo::OnDraw()
 	ImGui::End();
 
 	/*
-	ImGui::Begin("Light");
+	ImGui::BeginChild("Services");
+	auto& services = Application::GetAllServices();
+	for (Service* service : services)
+		ImGui::Text(" - %s", typeid(*service).name());
+	ImGui::EndChild();
+	*/
+
+	if (directionalLight)
 	{
-		static const char* LightTypeNames[] = { "Point", "Spot", "Directional" };
-		if (ImGui::BeginCombo("Type", LightTypeNames[(int)directionalLight->Type]))
+		ImGui::Begin("Light");
 		{
-			for (int i = 0; i < 3; i++)
-				if (ImGui::Selectable(LightTypeNames[i], (int)directionalLight->Type == i))
-					directionalLight->Type = (LightType)i;
-			ImGui::EndCombo();
+			static const char* LightTypeNames[] = { "Point", "Spot", "Directional" };
+			if (ImGui::BeginCombo("Type", LightTypeNames[(int)directionalLight->Type]))
+			{
+				for (int i = 0; i < 3; i++)
+					if (ImGui::Selectable(LightTypeNames[i], (int)directionalLight->Type == i))
+						directionalLight->Type = (LightType)i;
+				ImGui::EndCombo();
+			}
+
+			bool castShadows = directionalLight->GetCastShadows();
+			ImGui::Checkbox("Cast Shadows", &castShadows);
+			directionalLight->SetCastShadows(castShadows);
+
+			ImGui::SliderFloat("Radius", &directionalLight->Radius, 0.1f, 120.0f, "%.1f");
+			ImGui::SliderFloat("Distance", &directionalLight->Distance, 0.1f, 120.0f, "%.1f");
+			ImGui::SliderFloat("Fade Cutoff Inner", &directionalLight->FadeCutoffInner, 0.1f, 120.0f, "%.1f");
+			ImGui::SliderFloat("Intensity", &directionalLight->Intensity, 0.01f, 25.0f, "%.1f");
+			ImGui::ColorEdit3("Colour", &directionalLight->Colour[0]);
+			ImGui::SliderFloat3("Position", &directionalLight->GetTransform()->Position[0], -100, 100, "%.2f");
+
+			vec3 rotation = degrees(directionalLight->GetTransform()->Rotation);
+			ImGui::SliderFloat3("Rotation", &rotation[0], 0.0f, 360.0f, "%.2f");
+			directionalLight->GetTransform()->Rotation = radians(rotation);
 		}
-
-		bool castShadows = directionalLight->GetCastShadows();
-		ImGui::Checkbox("Cast Shadows", &castShadows);
-		directionalLight->SetCastShadows(castShadows);
-
-		ImGui::SliderFloat("Radius", &directionalLight->Radius, 0.1f, 120.0f, "%.1f");
-		ImGui::SliderFloat("Distance", &directionalLight->Distance, 0.1f, 120.0f, "%.1f");
-		ImGui::SliderFloat("Fade Cutoff Inner", &directionalLight->FadeCutoffInner, 0.1f, 120.0f, "%.1f");
-		ImGui::SliderFloat("Intensity", &directionalLight->Intensity, 0.01f, 25.0f, "%.1f");
-		ImGui::ColorEdit3("Colour", &directionalLight->Colour[0]);
-		ImGui::SliderFloat3("Position", &directionalLight->GetTransform()->Position[0], -100, 100, "%.2f");
-
-		vec3 rotation = degrees(directionalLight->GetTransform()->Rotation);
-		ImGui::SliderFloat3("Rotation", &rotation[0], 0.0f, 360.0f, "%.2f");
-		directionalLight->GetTransform()->Rotation = radians(rotation);
+		ImGui::End();
 	}
-	ImGui::End();
-	*/
-
-	/*
-	static bool servicesOpen = true;
-	if (ImGui::Begin("Services", &servicesOpen))
-	{
-		auto& services = Application::GetAllServices();
-		for (Service* service : services)
-			ImGui::Text(" - %s", typeid(*service).name());
-	}
-	ImGui::End();
-	*/
 
 	static bool graphicsOpen = true;
 	if (ImGui::Begin("Graphics"))
@@ -518,6 +544,25 @@ void Demo::OnDraw()
 					PP_Tonemapping->Tonemapper = (Tonemapper)i;
 			ImGui::EndCombo();
 		}
+
+		static const char* EnvironmentMapNames[] = { "Ice Lake", "Lobby", "Paper Mill", "Monument Valley" };
+		if(ImGui::BeginCombo("Environment", EnvironmentMapNames[EnvironmentMapIndex]))
+		{
+			for (int i = 0; i < (int)EnvironmentMaps.size(); i++)
+				if (ImGui::Selectable(EnvironmentMapNames[i], i == EnvironmentMapIndex))
+					SetEnvironmentMap(i);
+			ImGui::EndCombo();
+		}
+
+		if (Renderer::GetPipeline()->GetSkybox())
+			ImGui::DragFloat(
+				"Ambient Strength",
+				&Renderer::GetPipeline()->GetSkybox()->AmbientLightStrength,
+				0.01f,
+				0.0f,	// Min
+				2.0f	// Max
+			);
+
 		ImGui::DragFloat("Gamma", &PP_Tonemapping->Gamma, 0.05f, 1.0f, 3.0f);
 		ImGui::DragFloat("Exposure", &PP_Tonemapping->Exposure, 0.05f, 0.1f, 2.5f);
 
@@ -536,6 +581,9 @@ void Demo::OnDraw()
 			}
 			ImGui::EndCombo();
 		}
+
+		ImGui::DragFloat("Floor Roughness", &FloorMaterial->Roughness, 0.01f, 0.0f, 1.0f, "%.2f");
+		ImGui::DragFloat("Floor Metalness", &FloorMaterial->Metalness, 0.01f, 0.0f, 1.0f, "%.2f");
 	}
 	ImGui::End();
 }
@@ -581,4 +629,21 @@ void Demo::OnDrawGizmos()
 		Gizmos::DrawWireSphere(light->GetTransform()->Position, 0.1f);
 	}
 #endif
+}
+
+void SetEnvironmentMap(unsigned int index)
+{
+	if (index == EnvironmentMapIndex)
+		return; // No change
+
+	EnvironmentMapIndex = index;
+	if (!EnvMapData[index])
+	{
+		EnvironmentMapArgs& args = EnvironmentMaps[index];
+		args.Background = Application::AssetDir + args.Background;
+		if (!args.Reflection.empty())
+			args.Reflection = Application::AssetDir + args.Reflection;
+		EnvMapData[index] = new EnvironmentMap(args, EnvironmentMapRes);
+	}
+	Renderer::GetPipeline()->GetSkybox()->EnvironmentMap = EnvMapData[index];
 }

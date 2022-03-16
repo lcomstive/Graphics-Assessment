@@ -15,6 +15,7 @@ uniform int tonemapper = 1;
 void main()
 {
 	vec3 colour = texture(inputTexture, TexCoords).rgb;	
+
 	switch(tonemapper)
 	{
 		default:

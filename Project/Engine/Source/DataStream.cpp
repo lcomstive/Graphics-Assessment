@@ -45,6 +45,7 @@ DataStream::DataStream(string path) : DataStream(Engine::Read(path)) { }
 DataStream::~DataStream() { delete[] m_Data; }
 
 void DataStream::SaveTo(string path) { Engine::Write(path, vector<unsigned char>(m_Data, m_Data + m_Index)); }
+DataStream DataStream::ReadFrom(string path) { return DataStream(Engine::Read(path)); }
 
 void DataStream::SetReading()
 {

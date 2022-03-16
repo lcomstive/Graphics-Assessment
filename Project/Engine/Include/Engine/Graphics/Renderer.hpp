@@ -64,7 +64,7 @@ namespace Engine::Graphics
 
 	class Renderer
 	{
-		uint32_t m_Samples;
+		int m_MaxSamples;
 		glm::ivec2 m_Resolution;
 		bool m_Wireframe, m_VSync;
 		RenderPipeline* m_Pipeline;
@@ -122,7 +122,7 @@ namespace Engine::Graphics
 		ENGINE_API static bool GetVSync();
 		ENGINE_API static float GetFPS();
 		ENGINE_API static float GetTime();
-		ENGINE_API static uint32_t GetSamples();
+		ENGINE_API static int GetMaxSamples();
 		ENGINE_API static float GetDeltaTime();
 		ENGINE_API static bool GetWireframeMode();
 		ENGINE_API static glm::ivec2 GetResolution();

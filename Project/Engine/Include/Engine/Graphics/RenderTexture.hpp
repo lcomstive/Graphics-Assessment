@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 #include <Engine/Api.hpp>
+#include <Engine/DataStream.hpp>
 
 namespace Engine::Graphics
 {
@@ -12,6 +13,7 @@ namespace Engine::Graphics
 		// Colour
 		RGB8,
 		RGBA8,
+		RG16F,
 		RGBA16,
 		RGBA16F,
 		RedInteger,
@@ -72,6 +74,7 @@ namespace Engine::Graphics
 		GLenum Wrap = GL_REPEAT;
 		GLenum MinFilter = GL_LINEAR;
 		GLenum MagFilter = GL_LINEAR;
+		bool GenerateMipmaps = false;
 	};
 
 	class RenderTexture
@@ -80,13 +83,15 @@ namespace Engine::Graphics
 		unsigned int m_ID;
 		RenderTextureArgs m_Args;
 
-		void Recreate();
+		void Recreate(void* data = nullptr);
 
 		void CreateRenderbuffer();
-		void CreateColourTexture();
+		void CreateColourTexture(void* data);
+		void* GetPixels(size_t* length = nullptr);
+		static void SerializeArgs(RenderTextureArgs& args, DataStream& stream);
 
 	public:
-		ENGINE_API RenderTexture(const RenderTextureArgs args);
+		ENGINE_API RenderTexture(const RenderTextureArgs args, void* pixelData = nullptr);
 		ENGINE_API ~RenderTexture();
 
 		/// <summary>
@@ -112,5 +117,14 @@ namespace Engine::Graphics
 		ENGINE_API void SetResolution(glm::ivec2 newResolution);
 
 		ENGINE_API RenderTextureArgs& GetArgs();
+
+		ENGINE_API void SaveHDR(std::string path);
+		ENGINE_API void SavePNG(std::string path);
+		
+		/// <param name="quality">Percentage [0-100]</param>
+		ENGINE_API void SaveJPG(std::string path, unsigned int quality = 70);
+
+		ENGINE_API static RenderTexture* LoadFrom(std::string path, RenderTextureArgs args = {});
+		ENGINE_API static RenderTexture* LoadFromHDR(std::string path, RenderTextureArgs args = {});
 	};
 }

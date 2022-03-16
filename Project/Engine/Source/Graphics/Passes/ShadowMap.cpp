@@ -28,6 +28,8 @@ ShadowMapPass::ShadowMapPass(ivec2 resolution) : m_ShadowCasters()
 	m_Pass.Pass = new Framebuffer(specs);
 	m_Pass.ResizeWithScreen = false;
 
+	m_Pass.Name = "Shadow Mapping";
+
 	m_Pass.Shader = ResourceManager::LoadNamed<Shader>("Shaders/ShadowMap",
 		ShaderStageInfo
 		{

@@ -14,6 +14,7 @@ void GizmoService::OnStart()
 	FramebufferSpec spec;
 	spec.Attachments = { { TextureFormat::RGBA16F, TexturePixelType::Float }, TextureFormat::Depth };
 	spec.Resolution = Renderer::GetResolution();
+	m_Pass.Name = "Gizmos";
 	m_Pass.Pass = new Framebuffer(spec);
 	m_Pass.Shader = ResourceManager::LoadNamed<Shader>("Shaders/Gizmo",
 		ShaderStageInfo

@@ -10,6 +10,7 @@ using namespace Engine::Graphics;
 
 Framebuffer::Framebuffer(FramebufferSpec& specs) : m_Specs(specs), m_ID(GL_INVALID_VALUE), m_DepthAttachment(nullptr)
 {
+	m_DesiredSamples = m_Specs.Samples;
 	if (m_Specs.SwapchainTarget)
 		m_ID = 0;
 }
@@ -48,8 +49,11 @@ void Framebuffer::Create()
 		m_ID = 0;
 		return;
 	}
+	m_Specs.Samples = m_DesiredSamples;
 
-	glGenFramebuffers(1, &m_ID);
+	if(m_ID == GL_INVALID_VALUE)
+		glGenFramebuffers(1, &m_ID);
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, m_ID);
 
 	for (unsigned int i = 0; i < m_Specs.Attachments.size(); i++)
@@ -180,16 +184,10 @@ void Framebuffer::Recreate()
 
 	// Create attachments if they don't exist, otherwise alter existing ones
 	for (auto& attachment : m_ColourAttachments)
-	{
-		attachment->SetSamples(m_Specs.Samples);
 		attachment->SetResolution(m_Specs.Resolution);
-	}
 
 	if (m_DepthAttachment)
-	{
-		m_DepthAttachment->SetSamples(m_Specs.Samples);
 		m_DepthAttachment->SetResolution(m_Specs.Resolution);
-	}
 }
 
 void Framebuffer::BlitTo(Framebuffer* other, GLbitfield bufferFlags, GLenum filter)
@@ -236,6 +234,8 @@ void Framebuffer::CopyAttachmentTo(RenderTexture* destination, unsigned int colo
 
 void Framebuffer::Bind()
 {
+	if (m_DesiredSamples != m_Specs.Samples)
+		Destroy();
 	if (m_ID == GL_INVALID_VALUE)
 		Create();
 
@@ -263,8 +263,10 @@ void Framebuffer::SetResolution(ivec2 newResolution)
 
 void Framebuffer::SetSamples(unsigned int samples)
 {
-	m_Specs.Samples = std::clamp(samples, 1u, 32u);
-	Recreate();
+	if (samples == m_Specs.Samples)
+		return; // No change
+
+	m_DesiredSamples = std::clamp(samples, 1u, 32u);
 }
 
 ivec2 Framebuffer::GetResolution() { return m_Specs.Resolution; }

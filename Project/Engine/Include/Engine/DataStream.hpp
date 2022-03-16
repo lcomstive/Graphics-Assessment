@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <exception>
+#include <stdexcept>
 #include <glm/glm.hpp>
 
 #define _WRITESTREAM(type, streamType) template<> ENGINE_EXPORT DataStream* Write<type>(type t) { \
@@ -70,6 +70,7 @@ namespace Engine
 		ENGINE_API void SetWriting();
 
 		ENGINE_API void SaveTo(std::string path);
+		ENGINE_API static DataStream ReadFrom(std::string path);
 
 		ENGINE_EXPORT std::vector<unsigned char> GetData()
 		{
@@ -99,7 +100,7 @@ namespace Engine
 		template<typename T>
 		ENGINE_EXPORT DataStream* Write(T t) { throw std::runtime_error("Tried writing invalid type to stream"); }
 
-		ENGINE_EXPORT DataStream* Write(unsigned char* c, unsigned int length) { InternalWrite(StreamType::CHARARRAY, c, length); return this; }
+		ENGINE_EXPORT DataStream* Write(unsigned char* c, size_t length) { InternalWrite(StreamType::CHARARRAY, c, length); return this; }
 
 		template<> ENGINE_EXPORT DataStream* Write<std::byte>(std::byte b) { Write((unsigned char)b); return this; }
 		template<> ENGINE_EXPORT DataStream* Write<unsigned char>(unsigned char c) { InternalWrite(StreamType::CHAR, &c, sizeof(unsigned char)); return this; }

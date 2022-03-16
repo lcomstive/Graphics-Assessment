@@ -49,6 +49,8 @@ void Material::FillShader(Shader* shader)
 	BindTexture(3, "material.MetalnessMap", MetalnessMap, shader);
 	BindTexture(4, "material.AmbientOcclusionMap", AmbientOcclusionMap, shader);
 	// Texture Slot 5 reserved for Shadow Map
+	// Texture Slot 6 reserved for Environment Map
+	// Texture Slot 7 reserved for Irradiance Map
 }
 
 void Material::Serialize(DataStream& stream)

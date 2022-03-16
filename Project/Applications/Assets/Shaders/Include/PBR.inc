@@ -2,47 +2,7 @@
 #define _INCLUDE_PBR_
 #include "#ASSET_DIR/Shaders/Include/Light.inc"
 #include "#ASSET_DIR/Shaders/Include/Camera.inc"
-
-const float PBR_PI = 3.14159265359;
-
-vec3 FresnelSchlick(float cosTheta, vec3 F0)
-{
-	return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-float DistributionGGX(vec3 N, vec3 H, float roughness)
-{
-    float a      = roughness*roughness;
-    float a2     = a*a;
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-	
-    float num   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PBR_PI * denom * denom;
-	
-    return num / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-	
-    return num / denom;
-}
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
-	
-    return ggx1 * ggx2;
-}
+#include "#ASSET_DIR/Shaders/Include/PBRFunctions.inc"
 
 struct PBRInput
 {
@@ -57,6 +17,8 @@ struct PBRInput
 vec3 PBRLighting(PBRInput input)
 {
 	vec3 viewDir = normalize(camera.Position - input.WorldPos);
+	vec3 R = reflect(-viewDir, input.Normals);
+
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, input.Albedo, input.Metalness);
 
@@ -112,10 +74,23 @@ vec3 PBRLighting(PBRInput input)
 
 		float NdotL = max(dot(input.Normals, L), 0.0);
 
-		Lo += (kD * input.Albedo / PBR_PI + specular) * radiance * NdotL * (1.0 - shadow);
+		Lo += ((kD * input.Albedo / PBR_PI + specular) * radiance * NdotL) * (1.0 - shadow);
 	}
 	
-	vec3 ambient = vec3(0.001) * input.Albedo;
+	// Calculate ambient lighting
+	vec3 F = FresnelSchlickRoughness(max(dot(input.Normals, viewDir), 0.0), F0, input.Roughness);
+	vec3 kD = 1.0 - F;
+	kD *= 1.0 - input.Metalness;
+
+	vec3 irradiance = texture(environment.IrradianceMap, input.Normals).rgb;
+	vec3 diffuse = irradiance * input.Albedo;
+
+	const float MaxReflectionLOD = 1;
+	vec3 prefilteredColour = textureLod(environment.PrefilterMap, R, input.Roughness * MaxReflectionLOD).rgb;
+	vec2 brdf = texture(environment.BRDFMap, vec2(max(dot(input.Normals, viewDir), 0.0), input.Roughness)).rg;
+	vec3 specular = prefilteredColour * (F * brdf.x + brdf.y);
+	
+	vec3 ambient = (kD * diffuse + specular) * environment.AmbientLightStrength;
 	vec3 colour = ambient + Lo;
 
 	return colour;

@@ -17,6 +17,8 @@ namespace Engine::Graphics
 
 	struct ENGINE_API RenderPipelinePass
 	{
+		std::string Name = "N/A"; // DEBUGGING PURPOSES
+
 		ResourceID Shader = InvalidResourceID;
 		Framebuffer* Pass = nullptr;
 		std::function<void(Framebuffer* previous)> DrawCallback = nullptr;

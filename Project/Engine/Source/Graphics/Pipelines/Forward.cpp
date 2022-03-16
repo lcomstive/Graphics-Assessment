@@ -40,7 +40,7 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 	m_ForwardShader = ResourceManager::LoadNamed<Shader>("Shaders/Forward", shaderStages);
 
 	m_ForwardPass = new Framebuffer(framebufferSpecs);
-	RenderPipelinePass pass = { m_ForwardShader, m_ForwardPass };
+	RenderPipelinePass pass = { "Forward Renderer", m_ForwardShader, m_ForwardPass};
 	pass.DrawCallback = bind(&ForwardRenderPipeline::ForwardPass, this, ::placeholders::_1);
 
 	AddPass(pass);
@@ -76,6 +76,11 @@ void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 		shadowMap->GetTexture()->Bind(5);
 		m_CurrentShader->Set("shadowMap", 5);
 	}
+
+	// Environment Map
+	Skybox* skybox = Renderer::GetPipeline()->GetSkybox();
+	if (skybox)
+		skybox->FillShaderData(m_CurrentShader);
 
 	DrawArgs args;
 	args.DrawSorting = DrawSortType::BackToFront;

@@ -53,6 +53,7 @@ namespace Engine::Graphics
 	class Framebuffer
 	{
 		unsigned int m_ID;
+		int m_DesiredSamples;
 		FramebufferSpec m_Specs;
 
 		RenderTexture* m_DepthAttachment;
