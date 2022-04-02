@@ -8,10 +8,10 @@ namespace Engine::Services
 {
 	struct SceneService : public Service
 	{
-		ENGINE_API virtual void OnShutdown() override;
 		ENGINE_API virtual void OnDraw() override;
-		ENGINE_API virtual void OnUpdate(float deltaTime) override;
+		ENGINE_API virtual void OnShutdown() override;
 		ENGINE_API virtual void OnDrawGizmos() override;
+		ENGINE_API virtual void OnUpdate(float deltaTime) override;
 
 		ENGINE_API Scene* CurrentScene();
 		ENGINE_API void MakeCurrent(std::string name);

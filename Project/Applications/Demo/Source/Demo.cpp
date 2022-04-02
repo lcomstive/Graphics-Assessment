@@ -1,6 +1,8 @@
 #include <imgui.h>
 #include "Demo.hpp"
+#include <ImGuizmo.h>
 #include <Engine/Utilities.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <Engine/Graphics/Model.hpp>
 #include <Engine/Graphics/Gizmos.hpp>
 #include <Engine/ResourceManager.hpp>
@@ -33,6 +35,7 @@ using namespace Engine::Graphics::Pipelines;
 
 #if DRAW_GRID
 // Grid
+bool ShowGrid = true;
 ResourceID GridMeshID = InvalidResourceID;
 const int GridSize = 250;
 #endif
@@ -42,9 +45,9 @@ vector<GameObject*> CreatedObjects;
 bool DeferredRenderer = false;
 
 // Main Model
-#define CERBERUS	1
-#define SPONZA		0
-#define IBL_TEST	0
+#define CERBERUS		1
+#define SPONZA			0
+#define IBL_TEST		0
 
 #if CERBERUS
 ResourceID CerberusModel;
@@ -65,6 +68,7 @@ struct LightData
 	bool SwapDirection = false;
 };
 
+Transform* floorTransform;
 vector<LightData> CerberusLights;
 #endif
 
@@ -79,15 +83,16 @@ const string SponzaModelPath = "Models/Sponza/sponza.glb";
 const ivec2 EnvironmentMapRes = { 2048, 2048 };
 vector<EnvironmentMapArgs> EnvironmentMaps =
 {
+	ENVIRONMENT_MAP("None"),
 	ENVIRONMENT_MAP("Ice Lake"),
 	ENVIRONMENT_MAP("Lobby"),
 	ENVIRONMENT_MAP("Paper Mill"),
 	ENVIRONMENT_MAP("Monument Valley")
 };
-unsigned int EnvironmentMapIndex = -1;
+unsigned int EnvironmentMapIndex = 0;
 std::vector<EnvironmentMap*> EnvMapData;
 
-void SetEnvironmentMap(unsigned int index);
+void SetEnvironmentMap(unsigned int index, bool force = false);
 
 // Floor Texture
 const string FloorTexturePath = "Textures/Rusted Iron/rustediron2_basecolor.png";
@@ -153,7 +158,7 @@ void Demo::OnStart()
 #endif
 
 	EnvMapData.resize(EnvironmentMaps.size());
-	SetEnvironmentMap(1);
+	SetEnvironmentMap(EnvironmentMapIndex, true);
 
 	// Create scene
 	ResetScene();
@@ -194,7 +199,7 @@ void Demo::OnPipelineChanged(RenderPipeline* pipeline)
 	if (!PP_Tonemapping)
 		PP_Tonemapping = new TonemappingPass();
 
-	pipeline->AddPass(PP_Tonemapping->GetPipelinePass());
+	// pipeline->AddPass(PP_Tonemapping->GetPipelinePass());
 	DeferredRenderer = typeid(*pipeline) == typeid(DeferredRenderPipeline);
 }
 
@@ -220,15 +225,13 @@ void Demo::ResetScene()
 	CreatedObjects.emplace_back(cameraObj);
 
 	GameObject* directionalLightGO = new GameObject(scene, "Directional Light");
-	/*
 	directionalLight = directionalLightGO->AddComponent<Light>();
 	directionalLight->Type = LightType::Directional;
 	directionalLight->Colour = vec3(1);
-	directionalLight->Intensity = 0.1f;
-	directionalLight->Distance = 100.0f;
-	directionalLight->GetTransform()->Rotation = { radians(-60.0f), radians(5.0f), 0};
+	directionalLight->Intensity = 0.8f;
+	directionalLight->Distance = 30.0f;
+	directionalLight->GetTransform()->Rotation = { radians(-60.0f), radians(25.0f), 0 };
 	directionalLight->SetCastShadows(true);
-	*/
 
 	/*
 	directionalLightGO = new GameObject(scene, "Spot Light");
@@ -285,6 +288,7 @@ void Demo::ResetScene()
 	floor->AddComponent<MeshRenderer>()->Meshes = { { Mesh::Cube() } };
 	floor->GetTransform()->Position = { 0, -5.0f, 0 };
 	floor->GetTransform()->Scale = { 10, 1, 10 };
+	floorTransform = floor->GetTransform();
 
 	FloorMaterial = &floor->GetComponent<MeshRenderer>()->Meshes[0].Material;
 
@@ -300,10 +304,12 @@ void Demo::ResetScene()
 
 
 	// Directional Light
+	/*
 	GameObject* light = new GameObject(scene, "Directional Light");
 	directionalLight = light->AddComponent<Light>();
 	directionalLight->Type = LightType::Directional;
 	light->GetTransform()->Rotation = { radians(-60.0f), 0, 0 };
+	*/
 
 	Material lightMaterial;
 
@@ -441,6 +447,7 @@ void Demo::OnUpdate(float deltaTime)
 
 void Demo::OnDraw()
 {
+	Camera* mainCam = Camera::GetMainCamera();
 	Scene* scene = Application::GetService<Services::SceneService>()->CurrentScene();
 
 	// Draw GUI
@@ -486,11 +493,15 @@ void Demo::OnDraw()
 		ImGui::Text("Resolution: (%d, %d)", Renderer::GetResolution().x, Renderer::GetResolution().y);
 		ImGui::Text("VSync: %s", Renderer::GetVSync() ? "Enabled" : "Disabled");
 
+		ImGui::Checkbox("Show Grid", &ShowGrid);
+
+		/*
 		if (scene->GetPhysics().GetState() == PhysicsPlayState::Paused)
 			ImGui::Text("PHYSICS PAUSED");
 
 		if (ImGui::Button("Reload External Service"))
 			Application::GetService<ExternalServices>()->Reload(Application::AssetDir + ExternalServicePath);
+		*/
 	}
 	ImGui::End();
 
@@ -501,6 +512,12 @@ void Demo::OnDraw()
 		ImGui::Text(" - %s", typeid(*service).name());
 	ImGui::EndChild();
 	*/
+
+	ImGui::Begin("Render Passes");
+	auto& passes = Renderer::GetPipeline()->GetAllRenderPasses();
+	for (auto& pass : passes)
+		ImGui::Text(" - %s", pass.Name.c_str());
+	ImGui::End();
 
 	if (directionalLight)
 	{
@@ -519,7 +536,8 @@ void Demo::OnDraw()
 			ImGui::Checkbox("Cast Shadows", &castShadows);
 			directionalLight->SetCastShadows(castShadows);
 
-			ImGui::SliderFloat("Radius", &directionalLight->Radius, 0.1f, 120.0f, "%.1f");
+			// ImGui::SliderFloat("Radius", &directionalLight->Radius, 0.1f, 120.0f, "%.1f");
+			ImGui::DragFloat("Radius", &directionalLight->Radius, 1.0f, 0.1f, 120.0f, "%.1f");
 			ImGui::SliderFloat("Distance", &directionalLight->Distance, 0.1f, 120.0f, "%.1f");
 			ImGui::SliderFloat("Fade Cutoff Inner", &directionalLight->FadeCutoffInner, 0.1f, 120.0f, "%.1f");
 			ImGui::SliderFloat("Intensity", &directionalLight->Intensity, 0.01f, 25.0f, "%.1f");
@@ -545,7 +563,7 @@ void Demo::OnDraw()
 			ImGui::EndCombo();
 		}
 
-		static const char* EnvironmentMapNames[] = { "Ice Lake", "Lobby", "Paper Mill", "Monument Valley" };
+		static const char* EnvironmentMapNames[] = { "None", "Ice Lake", "Lobby", "Paper Mill", "Monument Valley" };
 		if(ImGui::BeginCombo("Environment", EnvironmentMapNames[EnvironmentMapIndex]))
 		{
 			for (int i = 0; i < (int)EnvironmentMaps.size(); i++)
@@ -582,37 +600,91 @@ void Demo::OnDraw()
 			ImGui::EndCombo();
 		}
 
-		ImGui::DragFloat("Floor Roughness", &FloorMaterial->Roughness, 0.01f, 0.0f, 1.0f, "%.2f");
-		ImGui::DragFloat("Floor Metalness", &FloorMaterial->Metalness, 0.01f, 0.0f, 1.0f, "%.2f");
+		if (FloorMaterial)
+		{
+			ImGui::DragFloat("Floor Roughness", &FloorMaterial->Roughness, 0.01f, 0.0f, 1.0f, "%.2f");
+			ImGui::DragFloat("Floor Metalness", &FloorMaterial->Metalness, 0.01f, 0.0f, 1.0f, "%.2f");
+		}
 	}
 	ImGui::End();
+
+#if CERBERUS
+	static ImGuizmo::MODE transformGizmoMode = ImGuizmo::WORLD;
+	ImGuizmo::Enable(true);
+	ivec2 windowRes = Renderer::GetResolution();
+	ImGuizmo::SetRect(0, 0, windowRes.x, windowRes.y);
+	static ImGuizmo::OPERATION transformOperation = ImGuizmo::TRANSLATE;
+	if (ImGui::Begin("TransformWidget", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoDecoration))
+	{
+		if (ImGui::Button("Translate [X]") || Input::IsKeyPressed(GLFW_KEY_X))
+			transformOperation = ImGuizmo::TRANSLATE;
+		if (ImGui::Button("Rotate    [C]") || Input::IsKeyPressed(GLFW_KEY_C))
+			transformOperation = ImGuizmo::ROTATE;
+		if (ImGui::Button("Scale     [V]") || Input::IsKeyPressed(GLFW_KEY_V))
+			transformOperation = ImGuizmo::SCALE;
+
+		static const string TransformGizmoModes[2] = { "Local", "World" };
+		if (ImGui::Button((TransformGizmoModes[(int)transformGizmoMode] + string(" [B]")).c_str()) || Input::IsKeyPressed(GLFW_KEY_B))
+			transformGizmoMode = (ImGuizmo::MODE)!(bool)transformGizmoMode;
+
+		mat4 gizmoMatrix = mat4(1.0f);
+		vec3 gizmoEuler = degrees(floorTransform->Rotation);
+		ImGuizmo::RecomposeMatrixFromComponents(
+			&floorTransform->Position[0],
+			&gizmoEuler[0],
+			&floorTransform->Scale[0],
+			&gizmoMatrix[0][0]
+		);
+		ImGuizmo::Manipulate(
+			&mainCam->GetViewMatrix()[0][0],
+			&mainCam->GetProjectionMatrix()[0][0],
+			transformOperation,
+			transformGizmoMode,
+			&gizmoMatrix[0][0]
+		);
+		ImGuizmo::DecomposeMatrixToComponents(
+			&gizmoMatrix[0][0],
+			&floorTransform->Position[0],
+			&gizmoEuler[0],
+			&floorTransform->Scale[0]
+		);
+		floorTransform->Rotation = radians(gizmoEuler);
+	}
+	ImGui::End();
+#endif
 }
 
 void Demo::OnDrawGizmos()
 {
 #if DRAW_GRID
-	// Draw grid as gizmo
-	if (GridMeshID == InvalidResourceID)
-		GridMeshID = Mesh::Grid(GridSize);
+	if (ShowGrid)
+	{
+		// Draw grid as gizmo
+		if (GridMeshID == InvalidResourceID)
+			GridMeshID = Mesh::Grid(GridSize);
 
-	Gizmos::SetColour(1, 1, 1, GridAlpha);
-	Gizmos::Draw(GridMeshID, vec3(-GridSize, 0.0f, -GridSize), vec3(GridSize * 2.0f));
+		Gizmos::SetColour(1, 1, 1, GridAlpha);
+		Gizmos::Draw(GridMeshID, vec3(-GridSize, 0.0f, -GridSize), vec3(GridSize * 2.0f));
 
-	Gizmos::SetColour(1, 0, 0, GridAlpha);
-	Gizmos::SetLineWidth(3.0f);
-	Gizmos::DrawLine({ -GridSize, 0, 0 }, { GridSize, 0, 0 });
+		Gizmos::SetColour(1, 0, 0, GridAlpha);
+		Gizmos::SetLineWidth(3.0f);
+		Gizmos::DrawLine({ -GridSize, 0, 0 }, { GridSize, 0, 0 });
 
-	Gizmos::SetColour(0, 0, 1, GridAlpha);
-	Gizmos::DrawLine({ 0, 0, -GridSize }, { 0, 0, GridSize });
+		Gizmos::SetColour(0, 0, 1, GridAlpha);
+		Gizmos::DrawLine({ 0, 0, -GridSize }, { 0, 0, GridSize });
 
-	Gizmos::SetColour(0, 1, 0, GridAlpha);
-	Gizmos::DrawLine({ 0, 0, 0 }, { 0, 0.5f, 0 });
+		Gizmos::SetColour(0, 1, 0, GridAlpha);
+		Gizmos::DrawLine({ 0, 0, 0 }, { 0, 0.5f, 0 });
 
+	}
+	
 	Gizmos::SetLineWidth(1.0f);
 #endif
 
+	/*
 	Gizmos::SetColour(0, 1, 0);
 	Gizmos::DrawWireSphere(directionalLight->GetTransform()->Position, 0.1f);
+	*/
 
 #if CERBERUS && 0
 	for (auto& Light : CerberusLights)
@@ -631,9 +703,9 @@ void Demo::OnDrawGizmos()
 #endif
 }
 
-void SetEnvironmentMap(unsigned int index)
+void SetEnvironmentMap(unsigned int index, bool force)
 {
-	if (index == EnvironmentMapIndex)
+	if (!force && index == EnvironmentMapIndex)
 		return; // No change
 
 	EnvironmentMapIndex = index;

@@ -45,3 +45,14 @@ Project/Applications/Assets/**/*.locked
 
 # Cached assets (e.g. models)
 *.cache
+
+# Unity
+Library/
+[Tt]emp/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+Unity/[Bb]uild/
+Unity[Oo]bj/
+Unity/*.csproj
+Unity/*.sln
+Unity/*.pdb

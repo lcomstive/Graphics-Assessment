@@ -64,14 +64,22 @@ namespace Engine::Graphics
 
 	class Renderer
 	{
-		int m_MaxSamples;
+		/// <summary>
+		/// Maximum instances that can be drawn at once
+		/// </summary>
+		const unsigned int MaxInstances = 10000;
+
 		glm::ivec2 m_Resolution;
+		RenderTexture* m_EmptyTexture;
 		bool m_Wireframe, m_VSync;
 		RenderPipeline* m_Pipeline;
 		bool m_SupportsTessellation;
 		Components::Camera* m_MainCamera;
 		float m_Time, m_FPS, m_DeltaTime;
 		std::vector<DrawCall> m_DrawQueue;
+
+		// Queried hardware limits
+		int m_MaxSamples, m_MaxTextureSlots;
 
 		static ENGINE_API Renderer* s_Instance;
 
@@ -127,6 +135,11 @@ namespace Engine::Graphics
 		ENGINE_API static bool GetWireframeMode();
 		ENGINE_API static glm::ivec2 GetResolution();
 		ENGINE_API static RenderPipeline* GetPipeline();
+
+		/// <summary>
+		/// Returns a 1x1 white texture. Useful to prevent branching in shaders.
+		/// </summary>
+		ENGINE_API static RenderTexture* GetEmptyTexture();
 
 		/// <summary>
 		/// If the current hardware supports the tessellation feature (OpenGL 4.0+

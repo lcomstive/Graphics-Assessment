@@ -1,5 +1,6 @@
 #version 330 core
 #include "#ASSET_DIR/Shaders/Include/PBR.inc"
+#include "#ASSET_DIR/Shaders/Include/Denoise.inc"
 #include "#ASSET_DIR/Shaders/Include/Material.inc"
 
 out vec4 FragColour;

@@ -81,6 +81,14 @@ namespace Engine
 		/// Can hide or show the mouse. When hidden mouse is locked and cannot exit window.
 		/// </summary>
 		ENGINE_API static void ShowMouse(bool show = true);
+
+		/// <summary>
+		/// Toggles between locking+hiding the mouse & unlocked+showing it
+		/// </summary>
+		/// <returns></returns>
+		ENGINE_API static void ToggleShowMouse();
+
+		ENGINE_API static bool IsMouseShowing();
 #pragma endregion
 	};
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #pragma warning(disable : 4251) // 'Engine::*': struct 'glm::vec<*>' needs to have dll-interface to be used by clients of struct 'Engine::*'
+#pragma warning(disable : 4005) // 'APIENTRY': macro redefinition (defined in both "C:\Program Files (x86)\Windows Kits\10\Include\x.x.x.x\shared\minwindef.h" & "Dependencies\glad\include\glad\glad.h"
 
 #if BUILD_SHARED_LIB
 	#if defined(_MSC_VER)

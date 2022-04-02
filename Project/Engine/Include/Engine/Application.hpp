@@ -12,6 +12,7 @@
 
 #include <Engine/ResourceManager.hpp>
 #include <Engine/Services/Service.hpp>
+#include <Engine/Graphics/Renderer.hpp>
 
 using namespace std::chrono_literals; // seconds in literal
 
@@ -72,6 +73,7 @@ namespace Engine
 		ImGuiContext* m_ImGuiContext = nullptr;
 		ResourceManager* m_ResourceManager = nullptr;
 
+		bool m_MouseShowing = true;
 		ENGINE_API static Application* s_Instance;
 
 	public:
@@ -118,6 +120,8 @@ namespace Engine
 
 		ENGINE_API static void EnableGizmos(bool enable = true);
 
+		ENGINE_API static bool IsMouseShowing();
+		ENGINE_API static void ToggleShowMouse();
 		ENGINE_API static void ShowMouse(bool show);
 
 		ENGINE_API static ApplicationState GetState();
@@ -136,7 +140,11 @@ namespace Engine
 		ENGINE_EXPORT static Application* Get() { return s_Instance; }
 
 	protected:
-		ENGINE_API virtual void InitServices();
+		ENGINE_API virtual void OnStart();
+		ENGINE_API virtual void OnShutdown() { }
+
+		ENGINE_API virtual void OnDraw() { }
+		ENGINE_API virtual void OnUpdate(float deltaTime) { }
 
 	private:
 		GLFWwindow* m_Window;
@@ -185,7 +193,7 @@ namespace Engine
 			{
 				Services::Service* base = (Services::Service*)service;
 				base->OnStart();
-				base->OnPipelineChanged(Renderer::GetPipeline());
+				base->OnPipelineChanged(Graphics::Renderer::GetPipeline());
 			}
 			return service;
 		}

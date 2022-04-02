@@ -1,3 +1,5 @@
+#include <Engine/Application.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Components/Light.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <glm/gtc/matrix_transform.hpp>

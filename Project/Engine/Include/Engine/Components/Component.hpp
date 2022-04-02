@@ -11,13 +11,6 @@ namespace Engine
 		class Component;
 		struct Transform;
 		struct Rigidbody;
-		class RawComponent;
-
-		ENGINE_API void OverrideComponentInternals(
-			Component* component,
-			GameObject* go,
-			Transform* transform = nullptr,
-			Rigidbody* rb = nullptr);
 
 		class Component
 		{
@@ -27,7 +20,6 @@ namespace Engine
 			Transform* m_CachedTransform = nullptr;
 
 			friend class Engine::GameObject;
-			friend ENGINE_API void OverrideComponentInternals(Component*, GameObject*, Transform*, Rigidbody*);
 
 		protected:
 			/// <summary>
@@ -45,6 +37,8 @@ namespace Engine
 			ENGINE_API virtual void Update(float deltaTime) { }
 
 		public:
+			bool Enabled = true;
+
 			ENGINE_API Rigidbody* GetRigidbody();
 			ENGINE_API Transform* GetTransform();
 			ENGINE_API GameObject* GetGameObject() const;

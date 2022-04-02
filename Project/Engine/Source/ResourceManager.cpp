@@ -67,8 +67,10 @@ bool ResourceManager::_IsValid(string& name)
 
 std::string ResourceManager::_GetName(ResourceID id)
 {
+	if (m_NamedInstanceNames.empty())
+		return "";
 	auto& it = m_NamedInstanceNames.find(id);
-	return it == m_NamedInstanceNames.end() ? it->second : "";
+	return it == m_NamedInstanceNames.end() ? "" : it->second;
 }
 
 std::type_index ResourceManager::_GetType(ResourceID& id)

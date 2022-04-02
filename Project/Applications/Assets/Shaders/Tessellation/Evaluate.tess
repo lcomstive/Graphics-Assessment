@@ -6,10 +6,12 @@ layout(triangles, equal_spacing, cw) in; // TODO: Test ccw
 in mat3 TBN_Pass[]; // Tangent, Bitangent, Normal
 in vec3 WorldPos_Pass[];
 in vec2 TexCoords_Pass[];
+in vec4 TextureIndices_Pass[];
 
 out mat3 TBN; // Tangent, Bitangent, Normal
 out vec3 WorldPos;
 out vec2 TexCoords;
+out vec4 TextureIndices;
 
 vec2 Interpolate2D(vec2 a, vec2 b, vec2 c)
 {
@@ -28,6 +30,7 @@ void main()
 	TBN[1] = normalize(Interpolate3D(TBN_Pass[0][1], TBN_Pass[1][1], TBN_Pass[2][1]));
 	TBN[2] = normalize(Interpolate3D(TBN_Pass[0][2], TBN_Pass[1][2], TBN_Pass[2][2]));
 	WorldPos = Interpolate3D(WorldPos_Pass[0], WorldPos_Pass[1], WorldPos_Pass[2]);
+	TextureIndices = TextureIndices_Pass[0];
 
 	gl_Position = camera.ProjectionMatrix * camera.ViewMatrix * vec4(WorldPos, 1.0);
 }

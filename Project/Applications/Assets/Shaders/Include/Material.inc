@@ -19,13 +19,13 @@ struct Material
 	sampler2D NormalMap;
 	sampler2D RoughnessMap;
 	sampler2D MetalnessMap;
-	sampler2D AmbientOcclusionMap;
+	// sampler2D AmbientOcclusionMap;
 
 	bool HasAlbedoMap;
 	bool HasNormalMap;
 	bool HasRoughnessMap;
 	bool HasMetalnessMap;
-	bool HasAmbientOcclusionMap;
+	// bool HasAmbientOcclusionMap;
 
 	bool Tessellate;
 	int TessellationDistances[2];

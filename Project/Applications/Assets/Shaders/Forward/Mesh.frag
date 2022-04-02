@@ -25,23 +25,18 @@ void main()
 	input.WorldPos = WorldPos;
 
 	// Albedo
-	input.Albedo = material.AlbedoColour.rgb;
-	if(material.HasAlbedoMap)
-		input.Albedo = texture(material.AlbedoMap, TexCoords).rgb;
+	vec4 albedo = material.AlbedoColour * texture(material.AlbedoMap, TexCoords);
+	input.Albedo = albedo.rgb;
 
 	// Metalness
-	input.Metalness = material.Metalness;
-	if(material.HasMetalnessMap)
-		input.Metalness = texture(material.MetalnessMap, TexCoords).r;
+	input.Metalness = material.Metalness * texture(material.MetalnessMap, TexCoords).r;
 
 	// Roughness
-	input.Roughness = material.Roughness;
-	if(material.HasRoughnessMap)
-		input.Roughness = texture(material.RoughnessMap, TexCoords).r;
+	input.Roughness = material.Roughness * texture(material.RoughnessMap, TexCoords).r;
 
 	// Calculate lighting
 	FragColour.rgb = PBRLighting(input);
-	FragColour.a = material.AlbedoColour.a;
+	FragColour.a = albedo.a;
 		
 	// Check for alpha clipping
 	if(material.AlphaClipping && FragColour.a <= material.AlphaClipThreshold)

@@ -1,9 +1,11 @@
 EngineType	   = "SharedLib" -- SharedLib / StaticLib
 DependencyType = "SharedLib" -- SharedLib / StaticLib
 
+EngineDefines = { }
 EngineLinkLibs = { "Engine", "ImGUI", "Assimp", "GLFW", "Glad" }
+
+include "./Modules/EngineApp.lua"
 include "./Modules/EngineService.lua"
-EngineDefines = {}
 
 if DependencyType == 'SharedLib' then
 	EngineDefines =
@@ -38,8 +40,10 @@ workspace "Graphics Engine"
 	include "../Engine"
 
 	group "Applications"
-		include "../Applications/Demo"
 		include "../Applications/Base"
-		-- include "../Applications/Editor"
+	group "Applications/Services"
+		include "../Applications/Demo"
+		include "../Applications/BasicGame"
 		include "../Applications/TestService"
+		include "../Applications/ModelViewer"
 	group ""

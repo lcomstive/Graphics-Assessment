@@ -167,6 +167,9 @@ Material Model::CreateMaterial(aiMaterial* aiMat)
 		LoadMaterialTextures(currentDirectory, aiTextureType_BASE_COLOR, aiMat, material.AlbedoMap);
 
 	LoadMaterialTextures(currentDirectory, aiTextureType_NORMALS, aiMat, material.NormalMap);
+	if(material.NormalMap == InvalidResourceID)
+		LoadMaterialTextures(currentDirectory, aiTextureType_HEIGHT, aiMat, material.NormalMap);
+
 	LoadMaterialTextures(currentDirectory, aiTextureType_METALNESS, aiMat, material.MetalnessMap);
 	LoadMaterialTextures(currentDirectory, aiTextureType_DIFFUSE_ROUGHNESS, aiMat, material.RoughnessMap);
 	LoadMaterialTextures(currentDirectory, aiTextureType_AMBIENT_OCCLUSION, aiMat, material.AmbientOcclusionMap);
@@ -209,10 +212,14 @@ ResourceID Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		{
 			/* Position    */ { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z },
 			/* Normals     */ { mesh->mNormals[i].x,  mesh->mNormals[i].y,  mesh->mNormals[i].z  },
-			/* TexCoords   */ { 0, 0 },
-			/* Tangents    */ { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z },
-			/* Bitangents  */ { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z }
+			/* TexCoords   */ { 0, 0 }
  		};
+
+		if (mesh->mTangents && mesh->mBitangents)
+		{
+			vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
+			vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
+		}
 
 		if (mesh->mTextureCoords[0])
 			vertex.TexCoords = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };

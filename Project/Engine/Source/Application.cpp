@@ -11,8 +11,8 @@
 #include <Engine/Graphics/Pipelines/Deferred.hpp>
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include <glad/glad.h>
-// #include <GLFW/../../src/internal.h> // To access GLFW global state
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -77,12 +77,11 @@ void Application::Run()
 	m_Gizmos = new Gizmos();
 	Gizmos::s_Instance = m_Gizmos;
 
-	// Load services
-	InitServices();
+	OnStart();
 
 #ifndef NDEBUG
 	// Enable gizmos by default in debug mode
-	// EnableGizmos(true);
+	EnableGizmos(true);
 #endif
 
 	// Setup Render Pipeline
@@ -110,14 +109,14 @@ void Application::Run()
 		float deltaTime = (float)m_Renderer->m_DeltaTime;
 		for (auto& pair : m_Services)
 			pair.second->OnUpdate(deltaTime);
-
-		Input::s_Instance->Update();
+		OnUpdate(deltaTime);
 
 #pragma region Drawing
 		// Setup ImGUI
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 
 		glViewport(0, 0, m_Renderer->m_Resolution.x, m_Renderer->m_Resolution.y);
 		glEnable(GL_DEPTH_TEST);
@@ -127,8 +126,9 @@ void Application::Run()
 
 		for (auto& pair : m_Services)
 			pair.second->OnDraw();
+		OnDraw();
 
-		if (sceneService)
+		if (sceneService && sceneService->CurrentScene())
 		{
 			auto cameras = sceneService->CurrentScene()->Root().GetComponentsInChildren<Camera>();
 			for(Camera* camera : cameras)
@@ -149,6 +149,7 @@ void Application::Run()
 		glfwSwapBuffers(m_Window);
 #pragma endregion
 
+		Input::s_Instance->Update();
 		glfwPollEvents();
 
 		// Calculate delta time
@@ -185,6 +186,8 @@ void Application::Run()
 	}
 	m_Services.clear();
 
+	OnShutdown();
+
 	delete m_Input;
 	delete m_ResourceManager;
 
@@ -213,7 +216,7 @@ void Application::UpdateGlobals()
 #endif
 }
 
-void Application::InitServices()
+void Application::OnStart()
 {
 	AddService<SceneService>();
 	AddService<ExternalServices>();
@@ -302,22 +305,22 @@ void Application::StyleImGUI()
 	ImVec4* colors = ImGui::GetStyle().Colors;
 	style.FrameBorderSize = 1.0f;
 	style.PopupBorderSize = 1.0f;
-	// style.AntiAliasedFill = false;
-	// style.WindowRounding = 0.0f;
+	style.AntiAliasedFill = false;
+	style.WindowRounding = 0.0f;
 	style.TabRounding = 3.0f;
-	// style.ChildRounding = 0.0f;
+	style.ChildRounding = 0.0f;
 	style.PopupRounding = 3.0f;
-	// style.FrameRounding = 0.0f;
-	// style.ScrollbarRounding = 5.0f;
+	style.FrameRounding = 0.0f;
+	style.ScrollbarRounding = 1.5f;
 	style.FramePadding = ImVec2(DefaultFramePadding.x, DefaultFramePadding.y);
 	style.WindowPadding = ImVec2(DefaultWindowPadding.x, DefaultWindowPadding.y);
 	style.CellPadding = ImVec2(9, 2);
-	// style.ItemInnerSpacing = ImVec2(8, 4);
-	// style.ItemInnerSpacing = ImVec2(5, 4);
-	// style.GrabRounding = 6.0f;
-	// style.GrabMinSize     = 6.0f;
+	style.ItemInnerSpacing = ImVec2(8, 4);
+	style.ItemInnerSpacing = ImVec2(5, 4);
+	style.GrabRounding = 6.0f;
+	style.GrabMinSize     = 6.0f;
 	style.ChildBorderSize = 0.0f;
-	// style.TabBorderSize = 0.0f;
+	style.TabBorderSize = 0.0f;
 	style.WindowBorderSize = 1.0f;
 	style.WindowMenuButtonPosition = ImGuiDir_None;
 	colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
@@ -326,7 +329,6 @@ void Application::StyleImGUI()
 	colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
 	colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-	// colors[ImGuiCol_PopupBorder] = ImVec4(0.21f, 0.21f, 0.21f, 1.00f);
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 	colors[ImGuiCol_FrameBg] = ImVec4(0.04f, 0.04f, 0.04f, 0.54f);
 	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.44f, 0.26f, 0.26f, 1.00f);
@@ -345,23 +347,6 @@ void Application::StyleImGUI()
 	colors[ImGuiCol_Button] = ImVec4(0.23f, 0.23f, 0.23f, 1.00f);
 	colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.49f, 0.62f, 1.00f);
 	colors[ImGuiCol_ButtonActive] = ImVec4(0.24f, 0.37f, 0.53f, 1.00f);
-	/*
-	colors[ImGuiCol_ButtonLocked] = ImVec4(0.183f, 0.273f, 0.364f, 1.000f);
-	colors[ImGuiCol_ButtonSecondary] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_ButtonSecondaryHovered] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_ButtonSecondaryActive] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_ButtonSecondaryLocked] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_Folder] = ImVec4(0.23f, 0.23f, 0.23f, 1.00f);
-	colors[ImGuiCol_FolderHovered] = ImVec4(0.35f, 0.49f, 0.62f, 1.00f);
-	colors[ImGuiCol_FolderActive] = ImVec4(0.24f, 0.37f, 0.53f, 1.00f);
-	colors[ImGuiCol_Toolbar] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-	colors[ImGuiCol_Icon] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_TitleHeader] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
-	colors[ImGuiCol_TitleHeaderHover] = ImVec4(0.12f, 0.12f, 0.12f, 1.00f);
-	colors[ImGuiCol_TitleHeaderPressed] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-	colors[ImGuiCol_TitleHeaderBorder] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-	colors[ImGuiCol_TitleHeaderDisabled] = ImVec4(0.17f, 0.00f, 0.00f, 1.00f);
-	*/
 	colors[ImGuiCol_Header] = ImVec4(0.47f, 0.19f, 0.19f, 1.00f);
 	colors[ImGuiCol_HeaderHovered] = ImVec4(0.43f, 0.24f, 0.24f, 1.00f);
 	colors[ImGuiCol_HeaderActive] = ImVec4(0.49f, 0.32f, 0.32f, 1.00f);
@@ -422,8 +407,16 @@ vector<Service*> Application::GetAllServices()
 
 void Application::ShowMouse(bool show)
 {
-	glfwSetInputMode(s_Instance->m_Window, GLFW_CURSOR, show ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	s_Instance->m_MouseShowing = show;
+	glfwSetInputMode(
+		s_Instance->m_Window,
+		GLFW_CURSOR,
+		show ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED
+	);
 }
+
+bool Application::IsMouseShowing() { return s_Instance->m_MouseShowing; }
+void Application::ToggleShowMouse() { ShowMouse(!s_Instance->m_MouseShowing); }
 
 void Application::_SetFullscreen(bool fullscreen)
 {

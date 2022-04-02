@@ -53,7 +53,6 @@ void Texture::GenerateImage()
 	glBindTexture(GL_TEXTURE_2D, m_ID);
 
 	// Set texture parameters
-	// TODO: Make these variables that can be changed outside of this function
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, m_Args.Wrap);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, m_Args.Wrap);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m_Args.MinFilter);

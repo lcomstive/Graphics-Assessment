@@ -32,10 +32,6 @@ project "Engine"
 		"Assimp"
 	}
 
-	if DependencyType == 'SharedLib' then
-		defines { "IMGUI_API=__declspec(dllimport)" }
-	end
-
 	filter "system:windows"
 		systemversion "latest" -- Windows SDK Version
 

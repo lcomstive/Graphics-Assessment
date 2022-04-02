@@ -1,3 +1,5 @@
+#include <Engine/Application.hpp>
+#include <Engine/ResourceManager.hpp>
 #include <Engine/Graphics/Renderer.hpp>
 #include <Engine/Graphics/Framebuffer.hpp>
 #include <Engine/Services/GizmoService.hpp>

@@ -73,7 +73,9 @@ vec2 Input::GetMouseDelta() { return (s_Instance->m_MousePos - s_Instance->m_Las
 
 float Input::GetScrollDelta() { return s_Instance->m_ScrollDelta; }
 
+void Input::ToggleShowMouse() { Application::ToggleShowMouse(); }
 void Input::ShowMouse(bool show) { Application::ShowMouse(show); }
+bool Input::IsMouseShowing() { return Application::IsMouseShowing(); }
 #pragma endregion
 
 void Input::Update()

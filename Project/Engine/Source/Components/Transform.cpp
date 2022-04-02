@@ -1,6 +1,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <Engine/Graphics/Shader.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 #include <Engine/Components/Transform.hpp>
 
 using namespace glm;
@@ -12,6 +13,7 @@ const vec3 WorldUp = { 0, 1, 0 };
 
 void Transform::Added() { m_Dirty = true; }
 
+mat4 Transform::GetModelMatrix() { return m_ModelMatrix; }
 vec3 Transform::GetGlobalScale()	{ return m_GlobalScale; }
 vec3 Transform::GetGlobalPosition() { return m_GlobalPosition; }
 vec3 Transform::GetGlobalRotation() { return m_GlobalRotation; }
@@ -20,6 +22,11 @@ mat4 Transform::GetGlobalRotationMatrix()
 {
 	vec3 rotation = GetGlobalRotation();
 	return eulerAngleXYZ(rotation.x, rotation.y, rotation.z);
+}
+
+mat4 Transform::GetRotationMatrix()
+{
+	return eulerAngleXYZ(Rotation.x, Rotation.y, Rotation.z);
 }
 
 vec3 Transform::Up() { return m_Up; }
@@ -99,6 +106,9 @@ void Transform::Update(float deltaTime)
 		return;
 	m_Dirty = false;
 
+	for (Transform* child : m_Children)
+		child->m_Dirty = true;
+
 	m_LastScale = Scale;
 	m_LastPos = Position;
 	m_LastRot = Rotation;
@@ -126,8 +136,13 @@ void Transform::Update(float deltaTime)
 	m_Up = normalize(cross(m_Right, m_Forward));
 
 	// Generate model matrix
-	mat4 translationMatrix = translate(mat4(1.0f), m_GlobalPosition);
-	mat4 scaleMatrix = scale(mat4(1.0f), m_GlobalScale);
+	mat4 translationMatrix = translate(mat4(1.0f), Position);
+	mat4 scaleMatrix = scale(mat4(1.0f), Scale);
 
-	m_ModelMatrix = translationMatrix * GetGlobalRotationMatrix() * scaleMatrix;
+	// m_ModelMatrix = translationMatrix * GetRotationMatrix() * scaleMatrix;
+
+	m_ModelMatrix = translationMatrix * eulerAngleXYZ(Rotation.x, Rotation.y, Rotation.z) * scaleMatrix;
+
+	if (m_Parent)
+		m_ModelMatrix = m_Parent->GetModelMatrix() * m_ModelMatrix;
 }

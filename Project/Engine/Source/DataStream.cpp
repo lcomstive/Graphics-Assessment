@@ -81,7 +81,7 @@ void DataStream::InternalWrite(StreamType type, unsigned char* GetData, size_t l
 	}
 
 	if ((length + m_Index + 1) > m_Length)
-		Reserve(s_InitialStreamSize + length * 2);
+		Reserve((size_t)(m_Length * 1.25f) + length * 2);
 
 	m_Data[m_Index++] = (unsigned char)type;
 	if (type == StreamType::STRING || type == StreamType::CHARARRAY)

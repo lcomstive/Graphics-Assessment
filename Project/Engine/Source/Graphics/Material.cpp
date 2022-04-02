@@ -3,6 +3,7 @@
 #include <Engine/Graphics/Shader.hpp>
 #include <Engine/Graphics/Texture.hpp>
 #include <Engine/Graphics/Material.hpp>
+#include <Engine/Graphics/Renderer.hpp>
 
 using namespace std;
 using namespace Engine;
@@ -16,11 +17,13 @@ void BindTexture(unsigned int index, string shaderName, ResourceID& textureID, S
 	if (textureID != InvalidResourceID)
 	{
 		Texture* texture = ResourceManager::Get<Texture>(textureID);
-		if(texture)
+		if (texture)
 			texture->Bind(index);
+		else
+			Graphics::Renderer::GetEmptyTexture()->Bind(index);
 	}
 	else
-		glBindTexture(GL_TEXTURE_2D, 0);
+		Graphics::Renderer::GetEmptyTexture()->Bind(index);
 }
 
 void Material::FillShader(Shader* shader)
@@ -70,12 +73,18 @@ void Material::Serialize(DataStream& stream)
 	SerializeTexture(stream, AmbientOcclusionMap);
 }
 
-void Material::SerializeTexture(DataStream& stream, ResourceID& texture)
+void Material::SerializeTexture(DataStream& stream, ResourceID& textureID)
 {
-	string name = texture ? ResourceManager::GetName(texture) : "";
-	string path = texture ? ResourceManager::Get<Texture>(texture)->GetPath() : "";
+	Texture* texture = ResourceManager::Get<Texture>(textureID);
+	string name = texture ? ResourceManager::GetName(textureID) : "";
+	string path = texture ? texture->GetPath() : "";
+	bool validTexture = !name.empty() && !path.empty();
+	stream.Serialize(&validTexture);
+	if (!validTexture)
+		return;
+
 	stream.Serialize(&name);
 	stream.Serialize(&path);
 	if (stream.IsReading() && !path.empty())
-		texture = ResourceManager::LoadNamed<Texture>(name, path);
+		textureID = ResourceManager::LoadNamed<Texture>(name, path);
 }

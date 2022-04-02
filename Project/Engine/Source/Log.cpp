@@ -6,7 +6,7 @@ using namespace std;
 using namespace Engine;
 
 int Log::s_LogLevel = (int)Log::LogLevel::Info |
-#ifndef NDEBUG // only add debug loglevel if NOT in release mode
+#ifndef NDEBUG // only add debug loglevel by default if NOT in release mode
 						(int)Log::LogLevel::Debug |
 #endif
 						(int)Log::LogLevel::Warning |

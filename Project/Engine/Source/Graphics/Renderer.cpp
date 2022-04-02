@@ -50,6 +50,17 @@ Renderer::Renderer() :
 
 	// Get maximum sample count for multisampling
 	glGetIntegerv(GL_MAX_SAMPLES, &m_MaxSamples);
+
+	RenderTextureArgs textureArgs;
+	textureArgs.Resolution = { 1, 1 };
+	textureArgs.Format = TextureFormat::RGBA8;
+	textureArgs.PixelType = TexturePixelType::UnsignedByte;
+	textureArgs.Wrap = GL_CLAMP_TO_EDGE;
+	unsigned int textureColour = 0xFFFFFFFF; // Equivalent to RGBA(1, 1, 1, 1)
+	m_EmptyTexture = new RenderTexture(textureArgs, (void*)&textureColour);
+
+	// Get maximum texture slots per shader stage
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &m_MaxTextureSlots);
 }
 
 Renderer::~Renderer()
@@ -65,6 +76,7 @@ void Renderer::SetWireframe(bool wireframe) { glPolygonMode(GL_FRONT_AND_BACK, (
 float Renderer::GetFPS() { return s_Instance->m_FPS; }
 float Renderer::GetTime() { return s_Instance->m_Time; }
 bool Renderer::GetVSync() { return s_Instance->m_VSync; }
+RenderTexture* Renderer::GetEmptyTexture() { return s_Instance->m_EmptyTexture; }
 float Renderer::GetDeltaTime() { return s_Instance->m_DeltaTime; }
 int Renderer::GetMaxSamples() { return s_Instance->m_MaxSamples; }
 ivec2 Renderer::GetResolution() { return s_Instance->m_Resolution; }

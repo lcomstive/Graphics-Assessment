@@ -7,10 +7,12 @@ layout (vertices = 3) out;
 in mat3 TBN_Tess[]; // Tangent, Bitangent, Normal
 in vec3 WorldPos_Tess[];
 in vec2 TexCoords_Tess[];
+in vec4 TexIndices_Tess[];
 
 out mat3 TBN_Pass[]; // Tangent, Bitangent, Normal
 out vec3 WorldPos_Pass[];
 out vec2 TexCoords_Pass[];
+out vec4 TexIndices_Pass[];
 
 struct Material
 {
@@ -35,6 +37,7 @@ void main()
 	TBN_Pass[gl_InvocationID] = TBN_Tess[gl_InvocationID];
 	WorldPos_Pass[gl_InvocationID] = WorldPos_Tess[gl_InvocationID];
 	TexCoords_Pass[gl_InvocationID] = TexCoords_Tess[gl_InvocationID];
+	TextureIndices_Pass[gl_InvocationID] = TextureIndices_Tess[gl_InvocationID];
 
 	float distanceToCam0 = distance(camera.Position, WorldPos_Pass[0]);
 	float distanceToCam1 = distance(camera.Position, WorldPos_Pass[1]);

@@ -12,6 +12,9 @@ project "ImGUI"
 	{
 		"%{DependencyDir}imgui/*.h",
 		"%{DependencyDir}imgui/*.cpp",
+		"%{DependencyDir}ImGuizmo/*.h",
+		"%{DependencyDir}ImGuizmo/*.cpp",
+		"%{DependencyDir}imgui/misc/cpp/*.cpp",
 		"%{DependencyDir}imgui/backends/imgui_impl_glfw.h",
 		"%{DependencyDir}imgui/backends/imgui_impl_glfw.cpp",
 		"%{DependencyDir}imgui/backends/imgui_impl_opengl3.h",

@@ -62,7 +62,8 @@ void GameObject::DrawGizmos()
 void GameObject::Update(float deltaTime)
 {
 	for (auto& pair : m_Components)
-		pair.second->Update(deltaTime);
+		if(pair.second->Enabled)
+			pair.second->Update(deltaTime);
 
 	for (Transform* child : m_Transform->GetChildren())
 		child->GetGameObject()->Update(deltaTime);

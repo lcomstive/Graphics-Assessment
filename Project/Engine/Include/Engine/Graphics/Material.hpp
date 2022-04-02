@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <Engine/Api.hpp>
 #include <Engine/DataStream.hpp>
-#include <Engine/Application.hpp>
 #include <Engine/Graphics/Shader.hpp>
 #include <Engine/Graphics/Texture.hpp>
 

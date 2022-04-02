@@ -23,3 +23,6 @@
 [submodule "Project/Dependencies/string-id"]
 	path = Project/Dependencies/string-id
 	url = https://github.com/TheAllenChou/string-id.git
+[submodule "Project/Dependencies/ImGuizmo"]
+	path = Project/Dependencies/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

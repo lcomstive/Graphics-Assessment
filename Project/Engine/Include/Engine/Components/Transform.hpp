@@ -2,6 +2,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <Engine/Api.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <Engine/Components/Component.hpp>
 
 namespace Engine::Graphics { class Shader; }
@@ -20,8 +21,10 @@ namespace Engine::Components
 		ENGINE_API void RemoveChild(unsigned int index);
 
 		ENGINE_API glm::vec3 GetGlobalScale();
+		ENGINE_API glm::mat4 GetModelMatrix();
 		ENGINE_API glm::vec3 GetGlobalPosition();
 		ENGINE_API glm::vec3 GetGlobalRotation();
+		ENGINE_API glm::mat4 GetRotationMatrix();
 		ENGINE_API glm::mat4 GetGlobalRotationMatrix();
 
 		ENGINE_API glm::vec3 Up();

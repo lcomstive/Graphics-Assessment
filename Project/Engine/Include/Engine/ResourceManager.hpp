@@ -77,9 +77,7 @@ namespace Engine
 #endif
 			, id));
 
-#if USE_STRING_ID
 			m_NamedInstanceNames.emplace(make_pair(id, name));
-#endif
 
 			return id;
 		}

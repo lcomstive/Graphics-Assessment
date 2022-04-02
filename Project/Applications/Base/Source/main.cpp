@@ -23,9 +23,9 @@ class BaseApp : public Application
 public:
 	BaseApp(ApplicationArgs& args, string gameLogicPath) : Application(args), m_GameLogicPath(gameLogicPath) { }
 
-	void InitServices() override
+	void OnStart() override
 	{
-		Application::InitServices();
+		Application::OnStart();
 		GetService<ExternalServices>()->Add(m_GameLogicPath);
 	}
 };

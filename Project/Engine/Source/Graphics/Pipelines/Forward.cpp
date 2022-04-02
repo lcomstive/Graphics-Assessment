@@ -28,8 +28,8 @@ ForwardRenderPipeline::ForwardRenderPipeline()
 
 	ShaderStageInfo shaderStages =
 	{
-		Application::AssetDir + "Shaders/Deferred/Mesh.vert",
-		Application::AssetDir + "Shaders/Deferred/Mesh.frag"
+		Application::AssetDir + "Shaders/Forward/Mesh.vert",
+		Application::AssetDir + "Shaders/Forward/Mesh.frag"
 	};
 
 	if (Renderer::SupportsTessellation())
@@ -58,6 +58,8 @@ void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 1);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_BLEND);
@@ -70,12 +72,14 @@ void ForwardRenderPipeline::ForwardPass(Framebuffer* previous)
 	for (int i = 0; i < lightCount; i++)
 		lights[i]->FillShader(i, m_CurrentShader);
 
+	/*
 	ShadowMapPass* shadowMap = Renderer::GetPipeline()->GetShadowMapPass();
 	if (shadowMap && shadowMap->GetPipelinePass().Pass)
 	{
 		shadowMap->GetTexture()->Bind(5);
 		m_CurrentShader->Set("shadowMap", 5);
 	}
+	*/
 
 	// Environment Map
 	Skybox* skybox = Renderer::GetPipeline()->GetSkybox();
