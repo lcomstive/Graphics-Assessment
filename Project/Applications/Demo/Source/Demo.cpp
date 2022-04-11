@@ -45,9 +45,9 @@ vector<GameObject*> CreatedObjects;
 bool DeferredRenderer = false;
 
 // Main Model
-#define CERBERUS		1
+#define CERBERUS		0
 #define SPONZA			0
-#define IBL_TEST		0
+#define IBL_TEST		1
 
 #if CERBERUS
 ResourceID CerberusModel;
@@ -199,7 +199,7 @@ void Demo::OnPipelineChanged(RenderPipeline* pipeline)
 	if (!PP_Tonemapping)
 		PP_Tonemapping = new TonemappingPass();
 
-	// pipeline->AddPass(PP_Tonemapping->GetPipelinePass());
+	pipeline->AddPass(PP_Tonemapping->GetPipelinePass());
 	DeferredRenderer = typeid(*pipeline) == typeid(DeferredRenderPipeline);
 }
 
@@ -313,7 +313,7 @@ void Demo::ResetScene()
 
 	Material lightMaterial;
 
-	const int LightCount = 0;
+	const int LightCount = 1;
 	for (int i = 0; i < LightCount; i++)
 	{
 		lightMaterial.Albedo =
@@ -332,14 +332,13 @@ void Demo::ResetScene()
 		data.Component->Colour = lightMaterial.Albedo;
 		data.Transform = light->GetTransform();
 		data.Transform->Position.y = Random(-10.0f, 10.0f);
-		data.Component->Radius = 50.0f;
+		data.Component->Radius = 15.0f;
 		data.Speed = Random(2.5f, 10.0f);
 		data.Distance = Random(5.0f, 15.0f);
 		data.SwapDirection = Random(0, 100) > 50;
 		data.Offset = radians(Random(0, 360));
 
 		CerberusLights.emplace_back(data);
-
 		CreatedObjects.emplace_back(light);
 	}
 #endif

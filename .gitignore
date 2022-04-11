@@ -56,3 +56,6 @@ Unity[Oo]bj/
 Unity/*.csproj
 Unity/*.sln
 Unity/*.pdb
+
+# Temp Files
+[Ss]ubmission/

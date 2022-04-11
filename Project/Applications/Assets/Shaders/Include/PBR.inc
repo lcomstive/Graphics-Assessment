@@ -38,20 +38,18 @@ vec3 PBRLighting(PBRInput input)
 
 		float spotlightTheta = dot(L, normalize(-lights[i].Direction));
 		if(lights[i].Type == LIGHT_SPOT &&
-			(spotlightTheta < cos(radians(lights[i].Radius))) ||
-			(dist > lights[i].Distance))
+			((spotlightTheta < cos(radians(lights[i].Radius))) ||
+			(dist > lights[i].Distance)))
 			continue;
 
+		/*
 		const float Linear = 0.7;
 		const float Quadratic = 1.8;
 
 		float attenuation = 1.0 / (1.0 + Linear * dist + Quadratic * dist * dist);
-
-		if(lights[i].Type != LIGHT_DIRECTIONAL)
-		{
-			float epsilon = lights[i].FadeCutoffInner - lights[i].Radius;
-			attenuation = clamp((spotlightTheta - lights[i].Radius) / epsilon, 0.0, 1.0);
-		}
+		*/
+		float attenuation = clamp(1.0 - dist * dist / (lights[i].Radius * lights[i].Radius), 0.0, 1.0);
+		attenuation *= attenuation;
 
 		vec3 radiance = lights[i].Colour * attenuation * lights[i].Intensity;
 

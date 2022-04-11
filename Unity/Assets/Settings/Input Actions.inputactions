@@ -16,12 +16,12 @@
                 },
                 {
                     "name": "Sprint",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "c47f53f9-bf6f-45f9-a82c-517ba59d6aa8",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "Jump",
@@ -233,7 +233,7 @@
                     "id": "53b25dfd-e6bb-403c-b6d0-687c59d87293",
                     "path": "<Gamepad>/rightStick",
                     "interactions": "",
-                    "processors": "",
+                    "processors": "ScaleVector2(x=100,y=100)",
                     "groups": "",
                     "action": "Look",
                     "isComposite": false,
